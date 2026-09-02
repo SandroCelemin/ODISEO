@@ -2,3 +2,4 @@ streamlit
 pillow
 networkx
 rapidfuzz
+streamlit_float
