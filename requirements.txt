@@ -5,3 +5,4 @@ rapidfuzz
 streamlit_float
 streamlit-agraph
 st_link_analysis
+psycopg2-binary
