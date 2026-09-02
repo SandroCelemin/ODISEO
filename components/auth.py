@@ -23,7 +23,7 @@ def update_image():
     else:
         st.session_state.image = None
 
-def render_auth():
+def render_auth(supabase):
     rc = False
     
     if st.session_state.show_login and not st.session_state.user:
@@ -50,23 +50,25 @@ def render_auth():
                 c = conn.cursor()
 
                 c.execute(
-                    "SELECT * FROM users WHERE username=? AND password=?",
+                    "SELECT * FROM users WHERE username=%s AND password=%s",
                     (u, p)
                 )
 
                 row = c.fetchone()
-                columns = [desc[0] for desc in c.description]
-                user = dict(zip(columns, row))
                 
-                conn.close()
+                if row:
+                    columns = [desc[0] for desc in c.description]
+                    user = dict(zip(columns, row))
 
-                if user:
+                #if user:
                     st.session_state.user = u
                     st.session_state.user_rating = user["rating"]
                     st.session_state.show_login = False
                     st.rerun()
                 else:
                     st.error(f"Login incorrecte. L'usuari {u} no està registrat.")
+                
+                conn.close()
 
         # =========
         # REGISTER
@@ -84,15 +86,29 @@ def render_auth():
             if st.button("Crear compte"):
                 
                 image = st.session_state.get("image")
-                path = "imagenes_users/default_profile_image.png"
-
-                if image:
-                    path = f"img_{new_user}_{image.name}"
-                    with open(path, "wb") as f:
-                        f.write(image.getbuffer())
+                bucket_name = "imagenes_users"
+                #path = "imagenes_users/default_profile_image.png"
 
                 try:
-                    add_user(new_user, new_pass, path)
+                    if image:
+                        # Leer los bytes del archivo cargado
+                        file_bytes = image.getvalue()
+                        file_name = f"img_{new_user}_{image.name}"
+
+                        # Subir archivo al bucket de Supabase
+                        supabase.storage.from_(bucket_name).upload(
+                            path=file_name,
+                            file=file_bytes,
+                            file_options={"content-type": image.type, "upsert": "true"}
+                        )
+
+                        # Obtener la URL pública para guardar en PostgreSQL
+                        image_url = supabase.storage.from_(bucket_name).get_public_url(file_name)
+                    else:
+                        # URL de la imagen por defecto alojada en Supabase Storage
+                        image_url = supabase.storage.from_(bucket_name).get_public_url("default_profile_image.png")
+                        
+                    add_user(new_user, new_pass, image_url)
                     st.success(f"Usuari *{new_user}* creat amb èxit!")
                     
                     st.session_state.user = new_user
