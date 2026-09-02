@@ -17,7 +17,8 @@ def get_conn():
         database=st.secrets["supabase"]["database"],
         user=st.secrets["supabase"]["user"],
         password=st.secrets["supabase"]["password"],
-        port=st.secrets["supabase"]["port"]
+        port=st.secrets["supabase"]["port"],
+        sslmode="require"
     )
     return conn
 
