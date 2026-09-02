@@ -3,46 +3,6 @@ import streamlit as st
 #import os
 
 def render_presentation(supabase):
-    """
-    # 1. Cerca de la carpeta d'imatges
-    possible_paths = [
-        "imagenes_main",
-        os.path.join(os.path.dirname(__file__), "..", "imagenes_main"),
-        os.path.join(os.path.dirname(__file__), "imagenes_main")
-    ]
-    
-    folder_path = None
-    for path in possible_paths:
-        if os.path.exists(path) and os.path.isdir(path):
-            folder_path = path
-            break
-
-    if not folder_path:
-        st.error("No s'ha trobat la carpeta 'imagenes_main'.")
-        return
-
-    # 2. Càrrega automàtica de fitxers
-    valid_extensions = ('.jpg', '.jpeg', '.png', '.webp')
-    found_files = [f for f in sorted(os.listdir(folder_path)) if f.lower().endswith(valid_extensions)]
-
-    images_b64 = []
-    for file_name in found_files:
-        full_path = os.path.join(folder_path, file_name)
-        try:
-            with open(full_path, "rb") as f:
-                b64_str = base64.b64encode(f.read()).decode("utf-8")
-                ext = file_name.split(".")[-1].lower()
-                mime = "jpeg" if ext in ["jpg", "jpeg"] else ext
-                images_b64.append(f"data:image/{mime};base64,{b64_str}")
-        except Exception:
-            pass
-
-    num_images = len(images_b64)
-
-    if num_images == 0:
-        st.warning(f"No s'han trobat imatges a la carpeta '{folder_path}'.")
-        return
-    """
     # 1. Obtener lista de imágenes desde el bucket
     bucket_name = "imagenes_main"
     try:
