@@ -1,8 +1,9 @@
 import streamlit as st
-import base64
-import os
+#import base64
+#import os
 
-def render_presentation():
+def render_presentation(supabase):
+    """
     # 1. Cerca de la carpeta d'imatges
     possible_paths = [
         "imagenes_main",
@@ -41,7 +42,28 @@ def render_presentation():
     if num_images == 0:
         st.warning(f"No s'han trobat imatges a la carpeta '{folder_path}'.")
         return
+    """
+    # 1. Obtener lista de imágenes desde el bucket
+    bucket_name = "imagenes_main"
+    try:
+        files = supabase.storage.from_(bucket_name).list()
+        valid_ext = ('.jpg', '.jpeg', '.png', '.webp')
+        found_files = [f['name'] for f in files if f['name'].lower().endswith(valid_ext)]
+    except Exception as e:
+        st.error(f"Error al conectar con Supabase: {e}")
+        return
 
+    if not found_files:
+        st.warning("No hay imágenes en el bucket.")
+        return
+
+    # 2. Generar URLs públicas
+    images_urls = [
+        supabase.storage.from_(bucket_name).get_public_url(f_name)
+        for f_name in sorted(found_files)
+    ]
+    num_images = len(images_urls)
+    
     # 3. Temps de l'animació
     time_per_image = 3.5  # Segons que la foto es queda fixa
     fade_time = 0.8       # Segons que triga la nova foto en aparèixer a sobre
@@ -56,9 +78,9 @@ def render_presentation():
         visible_end_pct = round(hold_pct + fade_pct, 2)
         visible_end_pct_plus = round(visible_end_pct + 0.01, 2)
 
-        for i, b64_img in enumerate(images_b64):
+        for i, img_url in enumerate(images_urls):
             delay = round(i * time_per_image, 2)
-            img_tags += f'<img src="{b64_img}" class="carousel-img img-{i}" alt="Banner">'
+            img_tags += f'<img src="{img_url}" class="carousel-img img-{i}" alt="Banner">'
             css_delays += f"""
             .carousel-img.img-{i} {{
                 animation: seamlessCrossfade {total_duration}s infinite;
@@ -77,7 +99,7 @@ def render_presentation():
         }}
         """
     else:
-        img_tags = f'<img src="{images_b64[0]}" class="carousel-img single" alt="Banner">'
+        img_tags = f'<img src="{images_urls[0]}" class="carousel-img single" alt="Banner">'
         css_delays = ".carousel-img.single { opacity: 1; z-index: 2; }"
         keyframes_css = ""
 
