@@ -208,7 +208,7 @@ items, item_dict = fetch_all_items()
 render_header()
 
 # ───────── Login de usuario o registro ─────────
-if render_auth():
+if render_auth(supabase):
     st.stop()
 
 # ───────── CREATE ─────────
