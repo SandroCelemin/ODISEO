@@ -15,6 +15,7 @@
 
 #-----------------
 import streamlit as st
+from supabase import create_client
 from db import *
 from models import *
 from streamlit_float import *
@@ -182,6 +183,14 @@ def get_menu_config():
         }
         
     #return menu_width
+    
+# ───────── CONEXION CON SUPABASE ─────────
+# 1. Obtener credenciales desde los secrets de Streamlit
+supabase_url = st.secrets["SUPABASE_URL"]
+supabase_key = st.secrets["SUPABASE_KEY"]
+
+# 2. Crear el cliente (esta es la variable `supabase`)
+supabase = create_client(supabase_url, supabase_key)
     
 # ───────── NOTIFICATION TOAST ─────────
 if st.session_state.user:
@@ -461,7 +470,7 @@ with col_window:
         with col2:
             
             detected_node_id = render_digraph1()
-            print("sigmasigmasigmasigmasigmasigmasigmasigmasigmasigmasigmasigmasigma")
+
         with col3:
             
             with st.container(height=350,border=True):
@@ -491,10 +500,8 @@ with col_window:
                     st.write("Clica un node de la xarxa per veure la seva informació.")
         
     else:
-        render_presentation()
+        render_presentation(supabase)
         render_marketplace(items, "main")
-
-print(round(4.22, 1))
 
 st.stop()
 
