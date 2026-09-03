@@ -107,7 +107,7 @@ def agregar_insignia_reservado(img: Image.Image) -> Image.Image:
     
     # Coordenades de l'etiqueta (cantonada superior dreta)
     margen = 20
-    ancho_badge, alto_badge = 280, 60
+    ancho_badge, alto_badge = 4000, 60
     x1 = ancho - ancho_badge - margen
     y1 = margen
     x2 = ancho - margen
