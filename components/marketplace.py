@@ -114,7 +114,7 @@ def agregar_insignia_reservado(img: Image.Image) -> Image.Image:
     y2 = margen + alto_badge
     
     try:
-        font = ImageFont.truetype("arial.ttf", 80)
+        font = ImageFont.truetype("DejaVuSans-Bold.ttf", 80)
     except OSError:
         font = ImageFont.load_default()
     
