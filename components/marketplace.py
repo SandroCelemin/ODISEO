@@ -107,14 +107,14 @@ def agregar_insignia_reservado(img: Image.Image) -> Image.Image:
     
     # Coordenades de l'etiqueta (cantonada superior dreta)
     margen = 20
-    ancho_badge, alto_badge = 4000, 60
+    ancho_badge, alto_badge = 280, 60
     x1 = ancho - ancho_badge - margen
     y1 = margen
     x2 = ancho - margen
     y2 = margen + alto_badge
     
     try:
-        font = ImageFont.truetype("arial.ttf", 40)
+        font = ImageFont.truetype("arial.ttf", 150)
     except OSError:
         font = ImageFont.load_default()
     
