@@ -55,20 +55,19 @@ def obtener_imagen_item(path, desaturate=False):
 
     return img_recortada
 
-# Reemplaza "TU_PROJECT_REF" por el subdominio real de tu proyecto en Supabase
-SUPABASE_STORAGE_BASE = "https://udmlukpnhvkedmhuvsec.supabase.co/storage/v1/object/public"
+SUPABASE_STORAGE_BASE = "https://udmlukpnhvedmhuvsec.supabase.co/storage/v1/object/public"
 
 @st.cache_data(show_spinner=False)
 def open_image(path):
     if not path:
         return None
     
-    # 1. Normalizar barras de Windows (\) a formato web (/)
+    # 1. Arreglar barras de Windows (\ -> /)
     path = str(path).replace("\\", "/")
 
-    # 2. Si no es URL completa, concatenar con la base de Supabase
+    # 2. Convertir la ruta relativa de la DB en la URL pública real
     if not path.startswith("http"):
-        path = path.lstrip("/") # Quita barras iniciales sobrantes
+        path = path.lstrip("/")
         path = f"{SUPABASE_STORAGE_BASE}/{path}"
 
     try:
@@ -78,7 +77,7 @@ def open_image(path):
     except Exception as e:
         print(f"Error cargando '{path}': {e}")
         return None
-
+        
 """
 @st.cache_data(show_spinner=False)
 def open_image(path):
