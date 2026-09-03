@@ -8,7 +8,7 @@ from PIL import Image, ImageOps, ImageDraw
 
 from engine import find_all_chains, get_items_from_have_chains
 from db import is_item_accepted_in_any_chain, get_user_by_username, calculate_chain_rating
-from services.utils import similarity, get_image_url
+from services.utils import similarity, get_image_url, get_pil_image
 from components.digraph import *
 
 st.set_page_config(layout="wide")
