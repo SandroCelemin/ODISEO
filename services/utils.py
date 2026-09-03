@@ -1,3 +1,5 @@
+import supabase
+
 from difflib import SequenceMatcher
 from rapidfuzz import fuzz, utils
 
