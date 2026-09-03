@@ -49,7 +49,7 @@ def make_circle_image(img_input: Image.Image | str, size=(200, 200), bucket: str
 @st.cache_data(show_spinner=False)
 def open_image(path):
     return Image.open(path).convert("RGB")
-
+"""
 def get_star_image(position, score):
     diff = float(score) - (position - 1)
     if diff >= 0.75:
@@ -58,7 +58,7 @@ def get_star_image(position, score):
         return IMG_HALF
     else:
         return IMG_EMPTY
-"""
+
 
 # ==========================================
 # 2. COMPONENTS I DIÀLEGS
