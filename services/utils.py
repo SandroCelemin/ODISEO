@@ -31,8 +31,8 @@ def get_image_url(bucket_name, file_name):
     clean_name = str(file_name).replace("\\", "/").strip().lstrip("/")
 
     # Si por error el nombre ya incluye el bucket "img_opt/", se remueve
-    #if clean_name.startswith(f"{bucket_name}/"):
-    #    clean_name = clean_name.replace(f"{bucket_name}/", "", 1)
+    if clean_name.startswith(f"{bucket_name}/"):
+        clean_name = clean_name.replace(f"{bucket_name}/", "", 1)
 
     return supabase.storage.from_(bucket_name).get_public_url(clean_name)
     
