@@ -5,117 +5,185 @@ import io
 from PIL import Image, ImageOps
 
 from db import get_digraph_data, get_user_by_username
-from services.utils import get_pil_image  # Importamos el cargador unificado de imágenes
+from services.utils import get_pil_image  # Integración de la función de utils
 from streamlit_agraph import agraph, Node, Edge, Config
 
 
-# 🚀 OPTIMITZACIÓ I ADAPTACIÓ D'IMATGES PER AL GRAF
+# 🚀 OPTIMITZACIÓ I CARGA D'IMATGES (SUPABASE + LOCAL)
 @st.cache_data(show_spinner=False)
-def obtener_imagen_base64(ruta_o_imagen, bucket=None, max_size=(90, 90)):
+def obtener_imagen_base64(ruta_imagen, bucket=None, max_size=(90, 90)):
     """
-    Carrega qualsevol imatge (ruta local, URL o Supabase), la retalla a format 
-    quadrat (1:1) perfectament centrat i la converteix a Base64 JPEG.
-    Això evita deformacions visuals en 'circularImage' i redueix la càrrega de dades.
+    Carrega la imatge fent servir 'get_pil_image' (Supabase/URL/Local),
+    la retalla a format quadrat 1:1 i la converteix a Base64.
     """
-    if not ruta_o_imagen:
+    if not ruta_imagen:
         return None
+        
+    if isinstance(ruta_imagen, str) and (ruta_imagen.startswith("http://") or ruta_imagen.startswith("https://") or ruta_imagen.startswith("data:")):
+        return ruta_imagen
 
+    img = None
+    
+    # 1. Intentem carregar la imatge des de Supabase / URL
     try:
-        # Intentem carregar la imatge fent servir la utilitat unificada
-        img = get_pil_image(ruta_o_imagen, bucket=bucket)
+        img = get_pil_image(ruta_imagen, bucket_name=bucket)
+    except Exception:
+        pass
 
-        # Si no s'ha obtingut i és una ruta de fitxer local existent:
-        if img is None and isinstance(ruta_o_imagen, str) and os.path.exists(ruta_o_imagen):
-            img = Image.open(ruta_o_imagen)
+    # 2. Si falla, intentem si és un fitxer local
+    if img is None and isinstance(ruta_imagen, str) and os.path.exists(ruta_imagen):
+        try:
+            img = Image.open(ruta_imagen)
+        except Exception:
+            pass
 
-        if img is None:
+    # 3. Processament i conversió a Base64
+    if img is not None:
+        try:
+            img = img.convert("RGB")
+            # ImageOps.fit retalla la imatge en format quadrat centrat (evita deformacions)
+            img_fit = ImageOps.fit(img, max_size, centering=(0.5, 0.5))
+            
+            buffer = io.BytesIO()
+            img_fit.save(buffer, format="JPEG", quality=75)
+            
+            codificado = base64.b64encode(buffer.getvalue()).decode("utf-8")
+            return f"data:image/jpeg;base64,{codificado}"
+        except Exception as e:
             return None
-
-        # Convertim a RGB per evitar errors amb canals alfa (PNG) al guardar en JPEG
-        img = img.convert("RGB")
-
-        # 📐 RECURS CLAU: ImageOps.fit retalla mantenint la proporció 1:1 quadrada des del centre
-        img_fit = ImageOps.fit(img, max_size, centering=(0.5, 0.5))
-
-        # Guardem en un buffer en memòria comprimit
-        buffer = io.BytesIO()
-        img_fit.save(buffer, format="JPEG", quality=75)
-
-        codificado = base64.b64encode(buffer.getvalue()).decode("utf-8")
-        return f"data:image/jpeg;base64,{codificado}"
-
-    except Exception as e:
-        return None
+            
+    return None
 
 
 @st.fragment
-def render_digraph_detail(items, height_container, camino):
+def render_digraph1():
     
-    # 1. Obtenir imatge de perfil de l'usuari actual
-    user_me_img = None
-    if st.session_state.get("user"):
-        user_me = get_user_by_username(st.session_state.user)
-        if user_me:
-            user_me_img = user_me.get("user_image")
-            
-    if not user_me_img:
-        user_me_img = "imagenes_users/default_profile_image.png"
-
     nodes_data, arcs_data = get_digraph_data()
 
     agraph_nodes = []
     agraph_arcs = []
 
-    # 2. GENERACIÓ DE NODES DINÀMICS PER ALS ÍTEMS
+    for item in nodes_data:
+        imagen_procesada = obtener_imagen_base64(item.get('image'), bucket="items")
+        tipo_forma = "circularImage" if imagen_procesada else "dot"
+        
+        agraph_nodes.append(
+            Node(
+                id=item['item_id'],
+                label=item['user'],
+                title=f"{item['have']}",
+                size=30,
+                shape=tipo_forma,
+                image=imagen_procesada,
+                color="#00ADB5"
+            )
+        )
+
+    for source_id, target_id in arcs_data:
+        agraph_arcs.append(
+            Edge(
+                source=source_id,
+                target=target_id,
+                type="CURVE_SMOOTH",
+                color="#F8B500",
+                directed=True
+            )
+        )
+
+    # Configuració sense els paràmetres que causaven l'error de JS
+    config = Config(
+        width="100%",
+        height=300,
+        directed=True,
+        collapsible=True
+    )
+    
+    config.physics = {
+        "enabled": True,
+        "solver": "barnesHut",
+        "stabilization": {
+            "enabled": True,
+            "iterations": 500
+        },
+        "barnesHut": {
+            "gravitationalConstant": -40000,
+            "centralGravity": 1,
+            "springLength": 1000,
+            "springConstant": 0.0001,
+            "damping": 0.08,
+            "avoidOverlap": 1
+        }
+    }
+    
+    if agraph_nodes:
+        with st.container(height=350, border=True, gap="xxsmall", vertical_alignment="center"):
+            return agraph(nodes=agraph_nodes, edges=agraph_arcs, config=config)
+    else:
+        st.info("No hi ha ítems actius per mostrar.")
+
+
+@st.fragment
+def render_digraph_detail(items, height_container, camino):
+    
+    if st.session_state.get("user"):
+        user_me = get_user_by_username(st.session_state.user)
+        user_me_img = user_me.get("user_image") if user_me else "imagenes_users/default_profile_image.png"
+    else:
+        user_me_img = "imagenes_users/default_profile_image.png"
+        
+    nodes_data, arcs_data = get_digraph_data()
+    
+    agraph_nodes = []
+    agraph_arcs = []
+
+    # 1. GENERACIÓ DE NODES DINÀMICS
     for item in items:
         node_id = item["item_id"]
-        
         node_color = "#34495E" 
         node_size = 25
         
-        imagen_procesada = obtener_imagen_base64(item.get('image'), bucket="items")
+        # Cerca la imatge de l'ítem a Supabase (bucket='items')
+        raw_img = item.get('image') or item.get('image_url')
+        imagen_procesada = obtener_imagen_base64(raw_img, bucket="items")
+        
         shape = "circularImage" if imagen_procesada else "dot"
         
         if camino is not None:
             if node_id in camino:
                 node_color = "#FF4B4B"
-                node_size = 38
+                node_size = 40
             else:
                 node_color = "#E0E0E0"
-        
-        # Diccionari de paràmetres per evitar enviar 'image=None' que pugui rompre JS
-        node_kwargs = {
-            "id": node_id,
-            "label": str(item.get("have", "")),
-            "size": node_size,
-            "shape": shape,
-            "color": node_color,
-            "title": f"{item.get('have')}"
-        }
-        if imagen_procesada:
-            node_kwargs["image"] = imagen_procesada
                 
-        agraph_nodes.append(Node(**node_kwargs))
+        agraph_nodes.append(
+            Node(
+                id=node_id, 
+                label=item.get("have", ""), 
+                size=node_size, 
+                shape=shape,
+                image=imagen_procesada,
+                color=node_color
+            )
+        )
 
-    # 3. GENERACIÓ DEL NODE DE L'USUARI ACTUAL ("TU")
+    # Node de l'usuari actual
     if camino is not None and len(camino) > 0:
         imagen_tu = obtener_imagen_base64(user_me_img, bucket="users")
         shape_tu = "circularImage" if imagen_tu else "dot"
         
-        user_node_kwargs = {
-            "id": "user_node",
-            "label": "TU 👤",
-            "size": 48,
-            "shape": shape_tu,
-            "color": "#00FF87",
-            "title": "¡Tu tancaves el cercle d'intercanvis!"
-        }
-        if imagen_tu:
-            user_node_kwargs["image"] = imagen_tu
+        agraph_nodes.append(
+            Node(
+                id="user_node",
+                label="TU 👤",
+                size=50,
+                shape=shape_tu,
+                image=imagen_tu,
+                color="#00FF87",
+                title="¡Tu tancaves el cercle d'intercanvis!"
+            )
+        )
 
-        agraph_nodes.append(Node(**user_node_kwargs))
-
-    # 4. GENERACIÓ D'ARESTES DINÀMICS
+    # 2. GENERACIÓ D'ARESTES DINÀMIQUES
     for source_id, target_id in arcs_data:
         edge_color = "#F8B500"
         edge_width = 2
@@ -144,7 +212,6 @@ def render_digraph_detail(items, height_container, camino):
             )
         )
     
-    # 5. CONNEXIONS DE L'USUARI AMB ELS EXTREMS DE LA CADENA
     if camino is not None and len(camino) > 0:
         primer_nodo_id = camino[0]
         ultimo_nodo_id = camino[-1]
@@ -171,12 +238,12 @@ def render_digraph_detail(items, height_container, camino):
             )
         )
 
-    # 6. CONFIGURACIÓ VISUAL (Sense nodeHighlightBehavior ni highlightColor)
+    # 4. Configuració corregida
     config = Config(
         width="100%",
         height=height_container - 70,
         directed=True,
-        collapsible=False
+        collapsible=True
     )
     
     config.physics = {
