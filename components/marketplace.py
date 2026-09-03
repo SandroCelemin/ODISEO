@@ -6,6 +6,7 @@ import streamlit as st
 from engine import get_items_from_have_chains
 from db import delete_item, get_items_from_user, get_reserved_items, get_user_by_username
 from services.search import first_distance_items
+from services.utils import get_pil_image
 
 from PIL import Image, ImageOps, ImageEnhance, ImageDraw, ImageFont
 
@@ -152,11 +153,8 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
                 path = item.get("image_optimized") or item.get("image")
                 
                 if path:
-                    # Obté la imatge directament de la memòria cau RAM
-                    
-                    #if optimized:
-                    
-                    img = open_image(path)
+                    # Convierte la ruta de Supabase en un objeto PIL listo para manipular
+                    img = get_pil_image(path, bucket_name="img_opt")
                     
                     if img is not None:
                         if locked_or_reserved:
