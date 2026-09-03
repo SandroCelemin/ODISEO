@@ -1,3 +1,5 @@
+import io
+import requests
 import streamlit as st
 #from engine import find_all_want_chains
 #from engine import find_all_chains
@@ -9,7 +11,7 @@ from PIL import Image, ImageOps, ImageEnhance, ImageDraw, ImageFont
 
 @st.cache_data(show_spinner=False)
 def cargar_imagen(path):
-    img = Image.open(path).convert("RGB")
+    img = Image.open(io.BytesIO(requests.get(path).content)).convert("RGB") if str(path).startswith("http") else Image.open(path).convert("RGB")
     return ImageOps.fit(img, (275, 200))
 
 def reducir_opacidad(imagen_pil, opacidad):
@@ -39,7 +41,7 @@ def desvanecer_imagen(imagen_pil, factor):
 @st.cache_data(show_spinner=False)
 def obtener_imagen_item(path, desaturate=False):
 
-    img = Image.open(path).convert("RGB")
+    img = Image.open(io.BytesIO(requests.get(path).content)).convert("RGB") if str(path).startswith("http") else Image.open(path).convert("RGB")
     img_recortada = ImageOps.fit(img, (275, 200))
     
     if desaturate:
@@ -51,7 +53,7 @@ def obtener_imagen_item(path, desaturate=False):
 
 @st.cache_data(show_spinner=False)
 def open_image(path):
-    return Image.open(path).convert("RGB")
+    return Image.open(io.BytesIO(requests.get(path).content)).convert("RGB") if str(path).startswith("http") else Image.open(path).convert("RGB")
 
 def agregar_insignia_reservado(img: Image.Image) -> Image.Image:
     """Afegeix l'etiqueta 'RESERVAT' a la cantonada superior dreta de la imatge."""
@@ -104,7 +106,7 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
                 # ───── IMATGE ─────
                 #st.write(item)
                 #path, optimized = ((item["image_optimized"], True) if item["image_optimized"] else (item["image"], False))
-                path = item["image_optimized"]
+                path = item.get("image_optimized") or item.get("image")
                 
                 if path:
                     # Obté la imatge directament de la memòria cau RAM
@@ -127,7 +129,7 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
                 user = get_user_by_username(item["user"])
                 
                 st.subheader(f"**{item['have']}**")
-                st.write(f":grey[{user["username"]}] ★ {user["rating"]}")
+                st.write(f":grey[{user['username']}] ★ {user['rating']}")
                 
                 # ───── BOTÓ VEURE ─────
                 if st.button("Veure", key=f"detail_{item['item_id']}", use_container_width=True):
