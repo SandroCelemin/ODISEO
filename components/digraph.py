@@ -9,43 +9,45 @@ from db import get_digraph_data, get_user_by_username
 from services.utils import get_pil_image
 
 
-# 🚀 CARGA DE IMÁGENES A BASE64 USANDO EXCLUSIVAMENTE 'get_pil_image'
+# 🚀 OPTIMIZACIÓN Y CARGA DE IMÁGENES INTEGRADA CON TU GET_PIL_IMAGE
 @st.cache_data(show_spinner=False)
 def obtener_imagen_base64(ruta_imagen, bucket=None, max_size=(90, 90)):
   if not ruta_imagen:
     return None
 
-  # Si ya es Data URI en Base64, se devuelve directa
+  # Si ya es una cadena Base64
   if isinstance(ruta_imagen, str) and ruta_imagen.startswith("data:"):
     return ruta_imagen
 
   img = None
 
-  # 1. Usamos tu función get_pil_image para obtener el objeto PIL Image (Supabase / URL)
-  try:
-    img = get_pil_image(ruta_imagen, bucket_name=bucket)
-  except Exception:
-    pass
-
-  # 2. Si get_pil_image no la obtuvo y es una ruta local en el servidor
-  if img is None and isinstance(ruta_imagen, str) and os.path.exists(ruta_imagen):
+  # 1. Si es un archivo local en el disco (ej. default_profile_image.png)
+  if isinstance(ruta_imagen, str) and os.path.exists(ruta_imagen):
     try:
       img = Image.open(ruta_imagen)
     except Exception:
       pass
 
-  # 3. Recortamos a 1:1 y convertimos la imagen PIL a cadena Base64
+  # 2. Si no es archivo local, llamamos a tu get_pil_image (Supabase / URL)
+  if img is None:
+    try:
+      img = get_pil_image(ruta_imagen, bucket_name=bucket)
+    except Exception:
+      pass
+
+  # 3. Procesamiento y conversión a Base64 (en PNG para soportar RGBA)
   if img is not None:
     try:
-      img = img.convert("RGB")
+      img = img.convert("RGBA")
       img_fit = ImageOps.fit(img, max_size, centering=(0.5, 0.5))
 
       buffer = io.BytesIO()
-      img_fit.save(buffer, format="JPEG", quality=80)
+      # Guardamos como PNG para soportar el canal RGBA que devuelve get_pil_image
+      img_fit.save(buffer, format="PNG")
 
       codificado = base64.b64encode(buffer.getvalue()).decode("utf-8")
-      return f"data:image/jpeg;base64,{codificado}"
-    except Exception:
+      return f"data:image/png;base64,{codificado}"
+    except Exception as e:
       return None
 
   return None
@@ -62,7 +64,6 @@ def render_digraph1():
     raw_img = item.get("image") or item.get("image_url")
     imagen_procesada = obtener_imagen_base64(raw_img, bucket="items")
 
-    # Si hay Base64 válido usamos circularImage con 'image', si no usamos 'dot'
     if imagen_procesada:
       node = Node(
           id=item["item_id"],
@@ -138,7 +139,7 @@ def render_digraph_detail(items, height_container, camino):
   agraph_nodes = []
   agraph_arcs = []
 
-  # 1. GENERACIÓN DE NODOS DINÁMICOS
+  # 1. GENERACIÓ DE NODES DINÀMICS
   for item in items:
     node_id = item["item_id"]
     node_color = "#34495E"
@@ -174,7 +175,7 @@ def render_digraph_detail(items, height_container, camino):
 
     agraph_nodes.append(node)
 
-  # Nodo del usuario actual
+  # Node de l'usuari actual
   if camino is not None and len(camino) > 0:
     imagen_tu = obtener_imagen_base64(user_me_img, bucket="users")
 
@@ -200,7 +201,7 @@ def render_digraph_detail(items, height_container, camino):
 
     agraph_nodes.append(user_node)
 
-  # 2. GENERACIÓN DE ARISTAS DINÁMICAS
+  # 2. GENERACIÓ D'ARESTES DINÀMIQUES
   for source_id, target_id in arcs_data:
     edge_color = "#F8B500"
     edge_width = 2
