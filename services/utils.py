@@ -10,10 +10,6 @@ def similarity(query: str, target: str) -> float:
     
     return score / 100.0  # Devuelve un valor entre 0.0 y 1.0
 
-def get_image(bucket_name, file_name):
-    
-    return image_opt_url = supabase.storage.from_(bucket_name).get_public_url(file_name)
-
 def get_image_url(bucket_name, file_name):
     return supabase.storage.from_(bucket_name).get_public_url(file_name)
 
