@@ -11,7 +11,9 @@ from PIL import Image, ImageOps, ImageEnhance, ImageDraw, ImageFont
 
 @st.cache_data(show_spinner=False)
 def cargar_imagen(path):
-    img = Image.open(io.BytesIO(requests.get(path).content)).convert("RGB") if str(path).startswith("http") else Image.open(path).convert("RGB")
+    img = open_image(path)
+    if img is None:
+        return None
     return ImageOps.fit(img, (275, 200))
 
 def reducir_opacidad(imagen_pil, opacidad):
@@ -41,7 +43,9 @@ def desvanecer_imagen(imagen_pil, factor):
 @st.cache_data(show_spinner=False)
 def obtener_imagen_item(path, desaturate=False):
 
-    img = Image.open(io.BytesIO(requests.get(path).content)).convert("RGB") if str(path).startswith("http") else Image.open(path).convert("RGB")
+    img = open_image(path)
+    if img is None:
+        return None
     img_recortada = ImageOps.fit(img, (275, 200))
     
     if desaturate:
@@ -53,7 +57,18 @@ def obtener_imagen_item(path, desaturate=False):
 
 @st.cache_data(show_spinner=False)
 def open_image(path):
-    return Image.open(io.BytesIO(requests.get(path).content)).convert("RGB") if str(path).startswith("http") else Image.open(path).convert("RGB")
+    if not path:
+        return None
+    try:
+        # Si es una URL de Supabase u otro servidor HTTP
+        if str(path).startswith("http"):
+            res = requests.get(path, timeout=5)
+            res.raise_for_status()
+            return Image.open(io.BytesIO(res.content)).convert("RGB")
+        # Si es una ruta local del disco
+        return Image.open(path).convert("RGB")
+    except Exception:
+        return None
 
 def agregar_insignia_reservado(img: Image.Image) -> Image.Image:
     """Afegeix l'etiqueta 'RESERVAT' a la cantonada superior dreta de la imatge."""
@@ -73,7 +88,10 @@ def agregar_insignia_reservado(img: Image.Image) -> Image.Image:
     x2 = ancho - margen
     y2 = margen + alto_badge
     
-    font = ImageFont.truetype("arial.ttf", 40)
+    try:
+        font = ImageFont.truetype("arial.ttf", 40)
+    except OSError:
+        font = ImageFont.load_default()
     
     # 1. Dibuixar fons taronja amb cantonades arrodonides
     draw.rounded_rectangle([x1, y1, x2, y2], radius=8, fill=(230, 81, 0, 230))
@@ -114,16 +132,17 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
                     #if optimized:
                     img = open_image(path)
                     
-                    if locked_or_reserved:
-                        enhancer = ImageEnhance.Color(img)
-                        img = enhancer.enhance(0.5)
-                        img = desvanecer_imagen(img, 0.5)
-                        img = agregar_insignia_reservado(img)
-                    """
-                    else:
-                        img = obtener_imagen_item(path, locked_or_reserved)
-                    """
-                    st.image(img, use_container_width=True)
+                    if img is not None:
+                        if locked_or_reserved:
+                            enhancer = ImageEnhance.Color(img)
+                            img = enhancer.enhance(0.5)
+                            img = desvanecer_imagen(img, 0.5)
+                            img = agregar_insignia_reservado(img)
+                        """
+                        else:
+                            img = obtener_imagen_item(path, locked_or_reserved)
+                        """
+                        st.image(img, use_container_width=True)
 
                 # ───── TEXT ─────
                 user = get_user_by_username(item["user"])
