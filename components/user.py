@@ -7,7 +7,7 @@ from components.marketplace import render_marketplace
 # Base URL para el bucket de Supabase Storage (ajusta el nombre del bucket si no es 'img_opt')
 SUPABASE_STORAGE_BASE = "https://udmlukpnhvkedmhuvsec.supabase.co/storage/v1/object/public/imagenes_users"
 
-@st.cache_data(ttl=3600)
+#@st.cache_data(ttl=3600)
 def load_supabase_image(bucket_and_path):
     """Descarga e interpreta cualquier imagen guardada en Supabase Storage."""
     if not bucket_and_path:
