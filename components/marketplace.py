@@ -150,7 +150,7 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
                 #st.write(item)
                 #path, optimized = ((item["image_optimized"], True) if item["image_optimized"] else (item["image"], False))
                 path = item.get("image_optimized") or item.get("image")
-                """
+                
                 if path:
                     # Obté la imatge directament de la memòria cau RAM
                     
@@ -165,11 +165,11 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
                             img = desvanecer_imagen(img, 0.5)
                             img = agregar_insignia_reservado(img)
                         """
-                        #else:
-                        #    img = obtener_imagen_item(path, locked_or_reserved)
+                        else:
+                            img = obtener_imagen_item(path, locked_or_reserved)
                         """
                         st.image(img, use_container_width=True)
-                    """
+                    
                 # ───── TEXT ─────
                 user = get_user_by_username(item["user"])
                 
