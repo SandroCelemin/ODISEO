@@ -55,31 +55,30 @@ def obtener_imagen_item(path, desaturate=False):
 
     return img_recortada
 
-SUPABASE_STORAGE_BASE = "https://udmlukpnhvedmhuvsec.supabase.co/storage/v1/object/public"
+SUPABASE_STORAGE_BASE = "https://udmlukpnhvkedmhuvsec.supabase.co/storage/v1/object/public"
 
 @st.cache_data(show_spinner=False)
 def open_image(path):
     if not path:
         return None
     
-    # 1. Normalizar barras de Windows (\ -> /)
+    # 1. Arreglar barras de Windows (\ -> /)
     path = str(path).replace("\\", "/")
 
-    # 2. Construir la URL completa
+    # 2. Convertir la ruta de la DB en URL pública de Supabase
     if not path.startswith("http"):
         path = path.lstrip("/")
         path = f"{SUPABASE_STORAGE_BASE}/{path}"
 
     try:
-        # Añadir User-Agent para evitar que Supabase bloquee la petición HTTP
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
         res = requests.get(path, headers=headers, timeout=5)
         res.raise_for_status()
         return Image.open(io.BytesIO(res.content)).convert("RGB")
     except Exception as e:
-        # Muestra el error exacto en pantalla si falla
-        st.error(f"Error en {path}: {e}")
-        return None        
+        print(f"Error cargando '{path}': {e}")
+        return None
+        
 """
 @st.cache_data(show_spinner=False)
 def open_image(path):
