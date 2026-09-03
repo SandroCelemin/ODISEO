@@ -55,27 +55,26 @@ def obtener_imagen_item(path, desaturate=False):
 
     return img_recortada
 
-# 1. Pon aquí la URL pública de tu bucket de Supabase (reemplaza los valores)
-SUPABASE_STORAGE_URL = "https://ODISEO.supabase.co/storage/v1/object/public/img_opt"
+# Reemplaza "TU_PROJECT_REF" por el subdominio real de tu proyecto en Supabase
+SUPABASE_STORAGE_BASE = "https://udmlukpnhvkedmhuvsec.supabase.co/storage/v1/object/public"
 
 @st.cache_data(show_spinner=False)
 def open_image(path):
     if not path:
         return None
     
-    # Normalizar barras de Windows (\) a formato web/Linux (/)
+    # 1. Normalizar barras de Windows (\) a formato web (/)
     path = str(path).replace("\\", "/")
 
-    # Si no es una URL completa (http...), añadir la base de Supabase
+    # 2. Si no es URL completa, concatenar con la base de Supabase
     if not path.startswith("http"):
-        path = f"{SUPABASE_STORAGE_URL}/{path}"
+        path = path.lstrip("/") # Quita barras iniciales sobrantes
+        path = f"{SUPABASE_STORAGE_BASE}/{path}"
 
     try:
-        if path.startswith("http"):
-            res = requests.get(path, timeout=5)
-            res.raise_for_status()
-            return Image.open(io.BytesIO(res.content)).convert("RGB")
-        return Image.open(path).convert("RGB")
+        res = requests.get(path, timeout=5)
+        res.raise_for_status()
+        return Image.open(io.BytesIO(res.content)).convert("RGB")
     except Exception as e:
         print(f"Error cargando '{path}': {e}")
         return None
