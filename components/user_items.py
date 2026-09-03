@@ -1,7 +1,36 @@
 import streamlit as st
+import io
+import requests
 
 from db import delete_item, get_items_from_user
 from PIL import Image, ImageOps
+
+SUPABASE_STORAGE_BASE = "https://udmlukpnhvkedmhuvsec.supabase.co/storage/v1/object/public"
+
+@st.cache_data(show_spinner=False)
+def open_image(path):
+    """Descarga la imagen desde Supabase Storage y la retorna en formato PIL."""
+    if not path:
+        return None
+
+    bucket_name = "img"
+    path = str(path).replace("\\", "/")
+
+    if not path.startswith("http"):
+        path = path.lstrip("/")
+        # Ajusta 'bucket_name' si tu bucket de artículos tiene otro nombre
+        if not path.startswith("bucket_name/"):
+            path = f"bucket_name/{path}"
+        path = f"{SUPABASE_STORAGE_BASE}/{path}"
+
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+        res = requests.get(path, headers=headers, timeout=5)
+        res.raise_for_status()
+        return Image.open(io.BytesIO(res.content)).convert("RGBA")
+    except Exception as e:
+        print(f"Error cargando '{path}': {e}")
+        return None
 
 @st.dialog("Vista completa de l'article", width="medium", icon=":material/visibility:")
 def ampliar_imagen(ruta_imagen, item):
@@ -73,10 +102,10 @@ def render_user_items():
                     
                     with col_image:
                         
-                        if item["image"]:
-                            img_original = Image.open(item["image"])
-                            img_recortada = ImageOps.fit(img_original, (275, 200)) # ImageOps.fit s'encarrega que no es deformi la foto en retallar-la
-                            st.image(img_recortada, use_container_width=True)
+                        #if item["image"]:
+                        img_original = open_image(item["image"])
+                        img_recortada = ImageOps.fit(img_original, (275, 200)) # ImageOps.fit s'encarrega que no es deformi la foto en retallar-la
+                        st.image(img_recortada, use_container_width=True)
                             
                         if st.button("Ampliar imatge", icon=":material/zoom_in:", key=item["item_id"], use_container_width=True):
                             # Cridem la funció del diàleg passant-li la ruta original
