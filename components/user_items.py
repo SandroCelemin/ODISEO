@@ -100,9 +100,9 @@ def render_user_items():
                     with col_image:
                         
                         #if item["image"]:
-                        img_original = open_image(item["image_optimized"])
+                        img_opt = open_image(item["image_optimized"])
                         #img_recortada = ImageOps.fit(img_original, (275, 200)) # ImageOps.fit s'encarrega que no es deformi la foto en retallar-la
-                        st.image(img_original, use_container_width=True)
+                        st.image(img_opt, use_container_width=True)
                             
                         if st.button("Ampliar imatge", icon=":material/zoom_in:", key=item["item_id"], use_container_width=True):
                             # Cridem la funció del diàleg passant-li la ruta original
