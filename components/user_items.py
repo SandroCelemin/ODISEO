@@ -33,8 +33,8 @@ def open_image(path):
 @st.dialog("Vista completa de l'article", width="medium", icon=":material/visibility:")
 def ampliar_imagen(item):
     
-    img_original = open_image(item["image"])
-    st.image(img_original, use_container_width=True)
+    url = get_image_url("img", item["image"])
+    st.image(url, use_container_width=True)
     #st.caption("Utilitza les fletxes de la cantonada superior dreta si vols veure-la encara més gran.")
 
 def render_user_items():
@@ -101,7 +101,7 @@ def render_user_items():
                     with col_image:
                         
                         #if item["image"]:
-                        img_opt = open_image(item["image_optimized"])
+                        #img_opt = open_image(item["image_optimized"])
                         #img_recortada = ImageOps.fit(img_original, (275, 200)) # ImageOps.fit s'encarrega que no es deformi la foto en retallar-la
                         
                         
