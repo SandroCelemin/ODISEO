@@ -82,7 +82,7 @@ def render_user(username):
         st.image(img_circular)
         """
         
-        img_raw = load_user_avatar(user.get("user_image"))
+        img_raw = load_supabase_image(user.get("user_image"))
         
         if img_raw:
             img_circular = make_circle_image(img_raw, size=(avatar_size, avatar_size))
