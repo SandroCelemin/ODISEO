@@ -25,53 +25,52 @@ IMG_EMPTY = "star_empty.png"  # Estrella grisa
 # ==========================================
 # 1. FUNCIONS AUXILIARS AMB CAXÓ (PIL)
 # ==========================================
-@st.cache_data(show_spinner=False)
-def load_and_crop_image(image_path: str, size: tuple[int, int]) -> Image.Image:
-    """Carrega i retalla una imatge evitant I/O repetit en disc."""
-    with Image.open(image_path) as img:
-        return ImageOps.fit(img, size)
-
-@st.cache_data(show_spinner=False)
-def make_circle_image(image_path: str, size=(200, 200)) -> Image.Image:
-    # 1. Redimensionar i enquadrar perquè no es deformi
-    with Image.open(image_path) as img_raw:
-        img = ImageOps.fit(img_raw, size, centering=(0.5, 0.5)).convert("RGBA")
+def load_and_crop_image(img_input: Image.Image | str, size: tuple[int, int], bucket: str = None) -> Image.Image | None:
+    """Acepta un objeto PIL o una ruta/URL y lo recorta al tamaño indicado."""
+    img = img_input if isinstance(img_input, Image.Image) else get_pil_image(img_input, bucket)
+    if not img:
+        return None
+    return ImageOps.fit(img, size)
     
-    # 2. Crear una màscara en blanc i negre (L) amb un cercle blanc
+def make_circle_image(img_input: Image.Image | str, size=(200, 200), bucket: str = None) -> Image.Image | None:
+    """Acepta un objeto PIL o una ruta/URL y le aplica una máscara circular."""
+    img_raw = img_input if isinstance(img_input, Image.Image) else get_pil_image(img_input, bucket)
+    if not img_raw:
+        return None
+
+    img = ImageOps.fit(img_raw, size, centering=(0.5, 0.5)).convert("RGBA")
     mask = Image.new("L", size, 0)
     draw = ImageDraw.Draw(mask)
     draw.ellipse((0, 0) + size, fill=255)
-    
-    # 3. Aplicar la màscara com a canal Alfa (transparència)
     img.putalpha(mask)
     return img
 
+"""
 @st.cache_data(show_spinner=False)
 def open_image(path):
     return Image.open(path).convert("RGB")
 
 def get_star_image(position, score):
-    """
-    Determina quina imatge d'estrella utilitzar per a la posició (1 a 5) donada la puntuació.
-    """
     diff = float(score) - (position - 1)
-    
     if diff >= 0.75:
         return IMG_FULL
     elif diff >= 0.25:
         return IMG_HALF
     else:
         return IMG_EMPTY
-
+"""
 
 # ==========================================
 # 2. COMPONENTS I DIÀLEGS
 # ==========================================
 @st.dialog("Vista completa de l'article", width="medium", icon=":material/visibility:")
-def ampliar_imagen(ruta_imagen):
-    img_original = Image.open(ruta_imagen)
-    st.image(img_original, use_container_width=True)
-
+def ampliar_imagen(ruta_o_key, bucket: str = "img"):
+    img_original = get_pil_image(ruta_o_key, bucket)
+    if img_original:
+        st.image(img_original, use_container_width=True)
+    else:
+        st.error("No s'ha pogut carregar la imatge.")
+        
 def see_cycle(chain):
     st.session_state.camino_resaltado = chain
     st.session_state.route_current_step = 0
@@ -182,7 +181,7 @@ def show_rute(item_dict):
             if current_step < num_items_chain:
                 #img_final = ImageOps.fit(img_original, (500, 200))
                 img_opt_PIL = get_pil_image(current_item["image_optimized"], "img_opt")
-                img_final = load_and_crop_image(img_opt_PIL, (500, 200))
+                img_final = load_and_crop_image(img_opt_PIL, (500, 200), "img_opt")
                 st.image(img_final, use_container_width=True)
             else:
                 img_final = make_circle_image(current_item["image"], size=(300, 300))
@@ -390,7 +389,7 @@ def render_detail(items):
                             #img_original = Image.open(star_img)
                             #img_recortada = ImageOps.fit(img_original, (star_size, star_size)) # ImageOps.fit s'encarrega que no es deformi la foto en retallar-la
                             img_star_PIL = get_pil_image(star_img, "img_sistema")
-                            img_recortada = load_and_crop_image(img_star_PIL, (star_size, star_size))
+                            img_recortada = load_and_crop_image(img_star_PIL, (star_size, star_size), "img_sistema")
                             
                             with col:
                                 st.image(img_recortada)
