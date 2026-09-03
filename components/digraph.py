@@ -49,7 +49,7 @@ def obtener_imagen_base64(ruta_o_imagen, bucket=None, max_size=(90, 90)):
 
 
 @st.fragment
-def render_digraph_detail(items, height_container, camino): # Funciona amb el camí invertit
+def render_digraph_detail(items, height_container, camino):
     
     # 1. Obtenir imatge de perfil de l'usuari actual
     user_me_img = None
@@ -70,53 +70,50 @@ def render_digraph_detail(items, height_container, camino): # Funciona amb el ca
     for item in items:
         node_id = item["item_id"]
         
-        # Valors per defecte
         node_color = "#34495E" 
         node_size = 25
         
-        # Adaptació de la imatge de l'ítem a Base64 quadrat
         imagen_procesada = obtener_imagen_base64(item.get('image'), bucket="items")
-        
-        # Si la imatge s'ha processat correctament usem "circularImage"
         shape = "circularImage" if imagen_procesada else "dot"
         
-        # Ressaltat si el node està en el camí seleccionat
         if camino is not None:
             if node_id in camino:
-                node_color = "#FF4B4B" # Vermell destacat
+                node_color = "#FF4B4B"
                 node_size = 38
             else:
-                node_color = "#E0E0E0" # Gris apagat
+                node_color = "#E0E0E0"
+        
+        # Diccionari de paràmetres per evitar enviar 'image=None' que pugui rompre JS
+        node_kwargs = {
+            "id": node_id,
+            "label": str(item.get("have", "")),
+            "size": node_size,
+            "shape": shape,
+            "color": node_color,
+            "title": f"{item.get('have')}"
+        }
+        if imagen_procesada:
+            node_kwargs["image"] = imagen_procesada
                 
-        agraph_nodes.append(
-            Node(
-                id=node_id, 
-                label=item.get("have", ""), 
-                size=node_size, 
-                shape=shape,
-                image=imagen_procesada,
-                color=node_color,
-                title=f"{item.get('have')}"
-            )
-        )
+        agraph_nodes.append(Node(**node_kwargs))
 
     # 3. GENERACIÓ DEL NODE DE L'USUARI ACTUAL ("TU")
     if camino is not None and len(camino) > 0:
-        # Adaptació de la imatge de l'usuari
         imagen_tu = obtener_imagen_base64(user_me_img, bucket="users")
         shape_tu = "circularImage" if imagen_tu else "dot"
         
-        agraph_nodes.append(
-            Node(
-                id="user_node",
-                label="TU 👤",
-                size=48,
-                shape=shape_tu,
-                image=imagen_tu,
-                color="#00FF87",       # Verd neó
-                title="¡Tu tancaves el cercle d'intercanvis!"
-            )
-        )
+        user_node_kwargs = {
+            "id": "user_node",
+            "label": "TU 👤",
+            "size": 48,
+            "shape": shape_tu,
+            "color": "#00FF87",
+            "title": "¡Tu tancaves el cercle d'intercanvis!"
+        }
+        if imagen_tu:
+            user_node_kwargs["image"] = imagen_tu
+
+        agraph_nodes.append(Node(**user_node_kwargs))
 
     # 4. GENERACIÓ D'ARESTES DINÀMICS
     for source_id, target_id in arcs_data:
@@ -128,7 +125,6 @@ def render_digraph_detail(items, height_container, camino): # Funciona amb el ca
                 idx_src = camino.index(source_id)
                 idx_tgt = camino.index(target_id)
                 
-                # Cadena construïda al revés [tgt <-- src]
                 if idx_src == idx_tgt + 1:
                     edge_color = "#FF4B4B"
                     edge_width = 5
@@ -153,7 +149,6 @@ def render_digraph_detail(items, height_container, camino): # Funciona amb el ca
         primer_nodo_id = camino[0]
         ultimo_nodo_id = camino[-1]
         
-        # Tu -> Últim Node
         agraph_arcs.append(
             Edge(
                 source="user_node",
@@ -165,7 +160,6 @@ def render_digraph_detail(items, height_container, camino): # Funciona amb el ca
             )
         )
         
-        # Primer Node -> Tu
         agraph_arcs.append(
             Edge(
                 source=primer_nodo_id,
@@ -177,14 +171,12 @@ def render_digraph_detail(items, height_container, camino): # Funciona amb el ca
             )
         )
 
-    # 6. CONFIGURACIÓ VISUAL I FÍSICA
+    # 6. CONFIGURACIÓ VISUAL (Sense nodeHighlightBehavior ni highlightColor)
     config = Config(
         width="100%",
         height=height_container - 70,
         directed=True,
-        nodeHighlightBehavior=False,
-        highlightColor="#F7A072",
-        collapsible=True
+        collapsible=False
     )
     
     config.physics = {
