@@ -4,6 +4,33 @@ from PIL import Image, ImageOps, ImageDraw
 from db import get_user_by_username, get_items_from_user
 from components.marketplace import render_marketplace
 
+# Base URL para el bucket de Supabase Storage (ajusta el nombre del bucket si no es 'img_opt')
+SUPABASE_STORAGE_BASE = "https://udmlukpnhvkedmhuvsec.supabase.co/storage/v1/object/public/imagenes_users"
+
+def load_user_avatar(path_or_filename):
+    """Carga el avatar del usuario desde el bucket 'imagenes_users' en Supabase."""
+    if not path_or_filename:
+        return None
+        
+    path_str = str(path_or_filename).replace("\\", "/").lstrip("/")
+    
+    # Si la BD solo guarda "foto.jpg", le añadimos la carpeta/bucket "imagenes_users"
+    if not path_str.startswith("http"):
+        if not path_str.startswith("imagenes_users/"):
+            path_str = f"imagenes_users/{path_str}"
+        url = f"{SUPABASE_STORAGE_BASE}/{path_str}"
+    else:
+        url = path_str
+
+    try:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        res = requests.get(url, headers=headers, timeout=5)
+        res.raise_for_status()
+        return Image.open(io.BytesIO(res.content))
+    except Exception as e:
+        print(f"Error cargando avatar desde '{url}': {e}")
+        return None
+
 def make_circle_image(image, size=(200, 200)):
     # 1. Redimensionar i enquadrar perquè no es deformi
     img = ImageOps.fit(image, size, centering=(0.5, 0.5)).convert("RGBA")
@@ -17,9 +44,9 @@ def make_circle_image(image, size=(200, 200)):
     img.putalpha(mask)
     return img
 
-IMG_FULL = "star_full.png"    # Estrella groga
-IMG_HALF = "star_half.png"    # Mitja estrella
-IMG_EMPTY = "star_empty.png"  # Estrella grisa
+IMG_FULL = "img_sistema/star_full.png"
+IMG_HALF = "img_sistema/star_half.png"
+IMG_EMPTY = "img_sistema/star_empty.png"
 
 def get_star_image(position, score):
     """
@@ -49,12 +76,21 @@ def render_user(username):
     col_avatar, col_info = st.columns([1,4])
     
     with col_avatar:
-        
+        """
         img_path = user["user_image"]
         
         img_original = Image.open(img_path)
         img_circular = make_circle_image(img_original, size=(avatar_size, avatar_size))
         st.image(img_circular)
+        """
+        
+        img_raw = load_image_from_url(user.get("user_image"))
+        
+        if img_raw:
+            img_circular = make_circle_image(img_raw, size=(avatar_size, avatar_size))
+            st.image(img_circular)
+        else:
+            st.image("https://api.dicebear.com/7.x/bottts/svg?seed=" + username, width=avatar_size)
         
     with col_info:
         
@@ -65,9 +101,10 @@ def render_user(username):
         with col1:
             
             cols = st.columns(5, gap="xxsmall")
+            rating = user["rating"]
             
             for i, col in enumerate(cols, start=1):
-                star_img = get_star_image(i, user["rating"])
+                star_img = get_star_image(i, rating)
                 
                 img_original = Image.open(star_img)
                 img_recortada = ImageOps.fit(img_original, (star_size, star_size)) # ImageOps.fit s'encarrega que no es deformi la foto en retallar-la
