@@ -150,12 +150,12 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
                 #st.write(item)
                 #path, optimized = ((item["image_optimized"], True) if item["image_optimized"] else (item["image"], False))
                 path = item.get("image_optimized") or item.get("image")
-                
+                """
                 if path:
                     # Obté la imatge directament de la memòria cau RAM
                     
                     #if optimized:
-                    """
+                    
                     img = open_image(path)
                     
                     if img is not None:
