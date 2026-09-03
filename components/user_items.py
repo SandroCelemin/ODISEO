@@ -30,9 +30,9 @@ def open_image(path):
         return None
 
 @st.dialog("Vista completa de l'article", width="medium", icon=":material/visibility:")
-def ampliar_imagen(ruta_imagen, item):
+def ampliar_imagen(item):
     
-    img_original = Image.open(item["image"])
+    img_original = open_image(item["image"])
     st.image(img_original, use_container_width=True)
     #st.caption("Utilitza les fletxes de la cantonada superior dreta si vols veure-la encara més gran.")
 
@@ -106,7 +106,7 @@ def render_user_items():
                             
                         if st.button("Ampliar imatge", icon=":material/zoom_in:", key=item["item_id"], use_container_width=True):
                             # Cridem la funció del diàleg passant-li la ruta original
-                            ampliar_imagen(item["image"], item)
+                            ampliar_imagen(item)
                             
                     with col_info:
 
