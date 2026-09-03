@@ -1,3 +1,5 @@
+import streamlit as st
+
 from supabase import create_client
 
 from difflib import SequenceMatcher
