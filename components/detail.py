@@ -8,7 +8,7 @@ from PIL import Image, ImageOps, ImageDraw
 
 from engine import find_all_chains, get_items_from_have_chains
 from db import is_item_accepted_in_any_chain, get_user_by_username, calculate_chain_rating
-from services.utils import similarity
+from services.utils import similarity, get_image_url
 from components.digraph import *
 
 st.set_page_config(layout="wide")
@@ -181,7 +181,8 @@ def show_rute(item_dict):
             
             if current_step < num_items_chain:
                 #img_final = ImageOps.fit(img_original, (500, 200))
-                img_final = load_and_crop_image(current_item["image_optimized"], (500, 200))
+                url_opt = get_image_url("img_opt", current_item["image_optimized"])
+                img_final = load_and_crop_image(url_opt, (500, 200))
                 st.image(img_final, use_container_width=True)
             else:
                 img_final = make_circle_image(current_item["image"], size=(300, 300))
@@ -330,8 +331,8 @@ def render_detail(items):
         img_recortada = load_and_crop_image(item["image"], (650, height - 20))
         st.image(img_recortada, use_container_width=True)
         """
-        img = open_image(item["image_optimized"])
-        st.image(img, use_container_width=True)
+        url_opt = get_image_url("img_opt", item["image_optimized"])
+        st.image(url_opt, use_container_width=True)
         
         if st.button("Ampliar imatge", icon=":material/zoom_in:", use_container_width=True):
             # Cridem la funció del diàleg passant-li la ruta original
@@ -365,8 +366,9 @@ def render_detail(items):
                 
                 #img_original = Image.open(img_path)
                 #img_circular = make_circle_image(img_original, size=(height-height_first_container, height-height_first_container))
+                url_user = get_image_url("imagenes_users", owner_user["user_image"])
                 img_circular = make_circle_image(
-                    owner_user["user_image"], 
+                    url_user, 
                     size=(height - height_first_container, height - height_first_container)
                 )
                 st.image(img_circular)
@@ -387,7 +389,8 @@ def render_detail(items):
                             
                             #img_original = Image.open(star_img)
                             #img_recortada = ImageOps.fit(img_original, (star_size, star_size)) # ImageOps.fit s'encarrega que no es deformi la foto en retallar-la
-                            img_recortada = load_and_crop_image(star_img, (star_size, star_size))
+                            url_star = get_image_url("img_sistema", star_img)
+                            img_recortada = load_and_crop_image(url_star, (star_size, star_size))
                             
                             with col:
                                 st.image(img_recortada)
