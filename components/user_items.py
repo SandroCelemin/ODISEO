@@ -3,6 +3,7 @@ import io
 import requests
 
 from db import delete_item, get_items_from_user
+from services.utils import get_image_url
 from PIL import Image, ImageOps
 
 SUPABASE_STORAGE_BASE = "https://udmlukpnhvkedmhuvsec.supabase.co/storage/v1/object/public"
@@ -102,7 +103,11 @@ def render_user_items():
                         #if item["image"]:
                         img_opt = open_image(item["image_optimized"])
                         #img_recortada = ImageOps.fit(img_original, (275, 200)) # ImageOps.fit s'encarrega que no es deformi la foto en retallar-la
-                        st.image(img_opt, use_container_width=True)
+                        
+                        
+                        
+                        url = get_image_url("img_opt", item["image_optimized"])
+                        st.image(url, use_container_width=True)
                             
                         if st.button("Ampliar imatge", icon=":material/zoom_in:", key=item["item_id"], use_container_width=True):
                             # Cridem la funció del diàleg passant-li la ruta original
