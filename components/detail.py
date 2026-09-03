@@ -45,11 +45,6 @@ def make_circle_image(img_input: Image.Image | str, size=(200, 200), bucket: str
     img.putalpha(mask)
     return img
 
-"""
-@st.cache_data(show_spinner=False)
-def open_image(path):
-    return Image.open(path).convert("RGB")
-"""
 def get_star_image(position, score):
     diff = float(score) - (position - 1)
     if diff >= 0.75:
