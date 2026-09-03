@@ -8,41 +8,25 @@ from PIL import Image, ImageOps
 SUPABASE_STORAGE_BASE = "https://udmlukpnhvkedmhuvsec.supabase.co/storage/v1/object/public"
 
 @st.cache_data(show_spinner=False)
-def fetch_bytes(url: str) -> bytes | None:
-    """Descarga y guarda en caché ÚNICAMENTE los bytes puros de la imagen."""
-    try:
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-        res = requests.get(url, headers=headers, timeout=5)
-        res.raise_for_status()
-        return res.content
-    except Exception as e:
-        print(f"Error descargando desde '{url}': {e}")
-        return None
-
-
 def open_image(path):
-    """Construye la imagen PIL de forma segura a partir de los bytes cacheados."""
     if not path:
         return None
-
+    
+    # 1. Arreglar barras de Windows (\ -> /)
     path = str(path).replace("\\", "/")
 
+    # 2. Convertir la ruta de la DB en URL pública de Supabase
     if not path.startswith("http"):
         path = path.lstrip("/")
-        if not path.startswith("img/"):
-            path = f"img/{path}"
         path = f"{SUPABASE_STORAGE_BASE}/{path}"
 
-    content = fetch_bytes(path)
-    if not content:
-        return None
-
     try:
-        img = Image.open(io.BytesIO(content))
-        img.load()  # Forzar lectura de píxeles en memoria
-        return img.convert("RGBA")
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+        res = requests.get(path, headers=headers, timeout=5)
+        res.raise_for_status()
+        return Image.open(io.BytesIO(res.content)).convert("RGB")
     except Exception as e:
-        print(f"Error procesando imagen PIL '{path}': {e}")
+        print(f"Error cargando '{path}': {e}")
         return None
 
 @st.dialog("Vista completa de l'article", width="medium", icon=":material/visibility:")
