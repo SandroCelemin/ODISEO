@@ -107,14 +107,14 @@ def agregar_insignia_reservado(img: Image.Image) -> Image.Image:
     
     # Coordenades de l'etiqueta (cantonada superior dreta)
     margen = 20
-    ancho_badge, alto_badge = 280, 60
+    ancho_badge, alto_badge = 4000, 60
     x1 = ancho - ancho_badge - margen
     y1 = margen
     x2 = ancho - margen
     y2 = margen + alto_badge
     
     try:
-        font = ImageFont.truetype("DejaVuSans-Bold.ttf", 35)
+        font = ImageFont.truetype("DejaVuSans-Bold.ttf", 40)
     except OSError:
         font = ImageFont.load_default()
     
@@ -155,6 +155,7 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
                     # Obté la imatge directament de la memòria cau RAM
                     
                     #if optimized:
+                    """
                     img = open_image(path)
                     
                     if img is not None:
@@ -164,11 +165,11 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
                             img = desvanecer_imagen(img, 0.5)
                             img = agregar_insignia_reservado(img)
                         """
-                        else:
-                            img = obtener_imagen_item(path, locked_or_reserved)
+                        #else:
+                        #    img = obtener_imagen_item(path, locked_or_reserved)
                         """
                         st.image(img, use_container_width=True)
-
+                    """
                 # ───── TEXT ─────
                 user = get_user_by_username(item["user"])
                 
