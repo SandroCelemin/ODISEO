@@ -62,22 +62,24 @@ def open_image(path):
     if not path:
         return None
     
-    # 1. Arreglar barras de Windows (\ -> /)
+    # 1. Normalizar barras de Windows (\ -> /)
     path = str(path).replace("\\", "/")
 
-    # 2. Convertir la ruta relativa de la DB en la URL pública real
+    # 2. Construir la URL completa
     if not path.startswith("http"):
         path = path.lstrip("/")
         path = f"{SUPABASE_STORAGE_BASE}/{path}"
 
     try:
-        res = requests.get(path, timeout=5)
+        # Añadir User-Agent para evitar que Supabase bloquee la petición HTTP
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+        res = requests.get(path, headers=headers, timeout=5)
         res.raise_for_status()
         return Image.open(io.BytesIO(res.content)).convert("RGB")
     except Exception as e:
-        print(f"Error cargando '{path}': {e}")
-        return None
-        
+        # Muestra el error exacto en pantalla si falla
+        st.error(f"Error en {path}: {e}")
+        return None        
 """
 @st.cache_data(show_spinner=False)
 def open_image(path):
