@@ -1,134 +1,120 @@
-import streamlit as st
 import io
 import requests
+from PIL import Image, ImageDraw, ImageOps
+import streamlit as st
 
-from db import delete_item, get_items_from_user
-from PIL import Image, ImageOps
+from components.marketplace import render_marketplace
+from db import get_items_from_user, get_user_by_username
 
 SUPABASE_STORAGE_BASE = "https://udmlukpnhvkedmhuvsec.supabase.co/storage/v1/object/public"
 
-@st.cache_data(show_spinner=False)
-def open_image(path):
-    """Descarga la imagen desde Supabase Storage y la retorna en formato PIL."""
-    if not path:
+IMG_FULL = "img_sistema/star_full.png"
+IMG_HALF = "img_sistema/star_half.png"
+IMG_EMPTY = "img_sistema/star_empty.png"
+
+
+@st.cache_data(ttl=3600)
+def fetch_image_bytes(url: str) -> bytes:
+    """Descarga y guarda en caché únicamente los bytes puros de la imagen."""
+    headers = {"User-Agent": "Mozilla/5.0"}
+    res = requests.get(url, headers=headers, timeout=5)
+    res.raise_for_status()
+    return res.content
+
+
+def load_supabase_image(bucket_and_path):
+    """Obtiene los bytes cacheados y construye la imagen PIL de forma segura."""
+    if not bucket_and_path:
         return None
 
-    bucket_name = "img"
-    path = str(path).replace("\\", "/")
-
-    if not path.startswith("http"):
-        path = path.lstrip("/")
-        # Ajusta 'bucket_name' si tu bucket de artículos tiene otro nombre
-        if not path.startswith("bucket_name/"):
-            path = f"bucket_name/{path}"
-        path = f"{SUPABASE_STORAGE_BASE}/{path}"
+    path_str = str(bucket_and_path).replace("\\", "/").lstrip("/")
+    url = path_str if path_str.startswith("http") else f"{SUPABASE_STORAGE_BASE}/{path_str}"
 
     try:
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-        res = requests.get(path, headers=headers, timeout=5)
-        res.raise_for_status()
-        return Image.open(io.BytesIO(res.content)).convert("RGBA")
+        content = fetch_image_bytes(url)
+        return Image.open(io.BytesIO(content))
     except Exception as e:
-        print(f"Error cargando '{path}': {e}")
+        print(f"Error descargando imagen desde '{url}': {e}")
         return None
 
-@st.dialog("Vista completa de l'article", width="medium", icon=":material/visibility:")
-def ampliar_imagen(ruta_imagen, item):
-    
-    img_original = Image.open(item["image"])
-    st.image(img_original, use_container_width=True)
-    #st.caption("Utilitza les fletxes de la cantonada superior dreta si vols veure-la encara més gran.")
 
-def render_user_items():
-    
-    st.markdown(
-        """
-        <style>
-        div[data-testid="stImage"] img {
-            
-            object-fit: cover;
-            border-radius: 10px;
-        }
+def make_circle_image(image, size=(200, 200)):
+    img = ImageOps.fit(image, size, centering=(0.5, 0.5)).convert("RGBA")
+    mask = Image.new("L", size, 0)
+    draw = ImageDraw.Draw(mask)
+    draw.ellipse((0, 0) + size, fill=255)
+    img.putalpha(mask)
+    return img
 
-        .truncate {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: block;
-            max-width: 100%;
-        }
 
-        .truncate-small {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: block;
-            max-width: 100%;
-            font-size: 0.8rem;
-            color: #888;
-        }
+def get_star_image(position, score):
+    diff = float(score) - (position - 1)
+    if diff >= 0.75:
+        return IMG_FULL
+    elif diff >= 0.25:
+        return IMG_HALF
+    else:
+        return IMG_EMPTY
 
-        /* botó més net */
-        div[data-testid="stButton"] > button {
-            border-radius: 10px;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-    
+
+def render_user(username):
+    avatar_size = 250
+    star_size = 50
+    user = get_user_by_username(username)
+
+    if not user:
+        st.error("Usuari no trobat")
+        return
+
     if st.button("Tornar", icon=":material/arrow_left_alt:"):
-        st.session_state.show_user_items = None
+        st.session_state.show_user = None
         st.rerun()
-            
-    st.subheader("Aquests són els teus articles publicats")
-    
-    num_columnas = 2
-    
-    filtered_items = get_items_from_user(st.session_state.user) # Artícles de l'usuari que no estan en cadenes d'intercanvi tancades
-    
-    for i in range(0, len(filtered_items), num_columnas):
 
-        row = filtered_items[i:i + num_columnas]
-        cols = st.columns(num_columnas, gap="medium")
+    st.html("<br>")
 
-        for col, item in zip(cols, row):
-        
-            with col:
-        
-                with st.container(border=True):
-                    
-                    col_image, col_info = st.columns(2)
-                    
-                    with col_image:
-                        
-                        #if item["image"]:
-                        img_original = open_image(item["image"])
-                        img_recortada = ImageOps.fit(img_original, (275, 200)) # ImageOps.fit s'encarrega que no es deformi la foto en retallar-la
-                        st.image(img_recortada, use_container_width=True)
-                            
-                        if st.button("Ampliar imatge", icon=":material/zoom_in:", key=item["item_id"], use_container_width=True):
-                            # Cridem la funció del diàleg passant-li la ruta original
-                            ampliar_imagen(item["image"], item)
-                            
-                    with col_info:
+    col_avatar, col_info = st.columns([1, 4])
 
-                        st.write(f"**Tens:** {item['have']}")
-                        st.write(f"**Vols:** {item['want']}")
-                        
-                        if item["status"] == "active":
-                            st.write(f"**Estat actual:** Lliure")
-                        # No es mostrarà mai com a bloquejat pel filtre de "filtered_items"
-                        elif item["status"] == "locked":
-                            st.write(f"**Estat actual:** Bloquejat")
-                            
-                        with st.expander("Veure descripció de l'article"):
-                            st.write(f"**Descripció:** {item['description']}")
-                            
-                    _, col_btn = st.columns([2,1])
-                    
-                    with col_btn:
-                        
-                        if st.button("Eliminar article", icon=":material/delete:", type="primary", key=f"delete_{item['item_id']}", use_container_width=True):
-                            delete_item(item["item_id"])
-                            st.rerun()
+    with col_avatar:
+        user_img_path = user.get("user_image")
+        if user_img_path and not user_img_path.startswith("http") and not user_img_path.startswith("imagenes_users/"):
+            user_img_path = f"imagenes_users/{user_img_path}"
+
+        img_raw = load_supabase_image(user_img_path)
+
+        if img_raw:
+            img_circular = make_circle_image(img_raw, size=(avatar_size, avatar_size))
+            st.image(img_circular)
+        else:
+            st.image(f"https://api.dicebear.com/7.x/bottts/svg?seed={username}", width=avatar_size)
+
+    with col_info:
+        st.header(user.get("username", username))
+
+        col1, col2 = st.columns([1, 3])
+
+        with col1:
+            cols = st.columns(5, gap="xxsmall")
+            rating = user.get("rating", 0)
+
+            for i, col in enumerate(cols, start=1):
+                star_path = get_star_image(i, rating)
+                img_star = load_supabase_image(star_path)
+
+                with col:
+                    if img_star:
+                        img_recortada = ImageOps.fit(img_star, (star_size, star_size))
+                        st.image(img_recortada)
+                    else:
+                        st.write("★")
+
+        with col2:
+            st.header(user.get("rating", 0))
+
+    st.divider()
+
+    user_items = get_items_from_user(username)
+
+    tab1, tab2, tab3 = st.tabs([f"{len(user_items)} Disponibles", "Comentaris", "Més informació"])
+
+    with tab1:
+        render_marketplace(user_items, "user_items")
