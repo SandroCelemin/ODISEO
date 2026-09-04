@@ -301,14 +301,6 @@ def render_create(items, supabase):
                             image_url = supabase.storage.from_(bucket_orig_name).get_public_url("image_not_found.png")
                             image_opt_url = image_url
                             
-                            # Es guarda la imatge al disc d'aquesta manera perquè image no té 
-                            # la propietat .save ja que és d'un file uploader
-                            #with open(path, "wb") as f:
-                            #    f.write(image.getbuffer())
-                            
-                            #path_opt = optimize_image(path, image)
-        
-                        # add_item(user, have, description, image, image_optimized, want, category)
                         # Guardar en PostgreSQL les URLs públiques en comptes de camins locals
                         add_item(
                             st.session_state.user,
