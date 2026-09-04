@@ -49,7 +49,7 @@ setup_database()
 float_init()
 
 # 🚀 3. CACHÉ DE CONSULTAS A BD (Evita leer el disco en cada clic)
-@st.cache_data(ttl=60)  # Se mantiene en RAM 60 segundos o hasta crear un ítem nuevo
+@st.cache_data
 def fetch_all_items():
     """
     raw_items = get_items()
@@ -454,119 +454,9 @@ with col_window:
     if st.session_state.show_notifications:
         render_notifications()
         st.stop()
-    
-    if st.session_state.user == "Perico de los palotes":
-        
-        # ───────── MARKETPLACE ─────────
-        #with st.container(border=True, gap="xxsmall"):
-        
-        #with st.expander("Visualizador de la red de CONIXBERG:"):
-        col1, col2, col3 = st.columns([1,2,1])
-        
-        with col1:
-            
-            with st.container(height=350,border=True):
-                pass
-                
-        with col2:
-            
-            detected_node_id = render_digraph1()
-
-        with col3:
-            
-            with st.container(height=350,border=True):
-            
-                if detected_node_id is not None:
-                    
-                    node_item = item_dict[detected_node_id]
-                    
-                    st.write(f"### Informació del node")
-                    
-                    img_original = Image.open(node_item["image"])
-                    img_recortada = ImageOps.fit(img_original, (200, 130)) #ImageOps.fit se encarga de que no se deforme la foto al recortarla
-                    st.image(img_recortada, use_container_width=True)
-                    
-                    #st.write(f"Artículo: **{node_item['have']}**")
-                    if st.button(
-                        "Veure article",
-                        key=f"detail_node{node_item['item_id']}",
-                        use_container_width=True
-                    ):
-                        print("entro en ver")
-                        st.session_state.detail_item = node_item["item_id"]
-                        st.rerun()
-                    
-                else:
-                    st.write("### Detalls")
-                    st.write("Clica un node de la xarxa per veure la seva informació.")
         
     else:
         render_presentation(supabase)
         render_marketplace(items, "main")
 
 st.stop()
-
-cycles = find_all_chains("johnson_all", "have", items, items[0]["item_id"])
-
-if cycles:
-    
-    for cycle in cycles:
-        add_chains(cycle)
-
-#print("johnson", find_all_chains("johnson", "have", items, items[0]["item_id"]))
-
-#---------------------------------
-# Ruta a la base de datos (ajusta la extensión/nombre si es diferente)
-DB_PATH = "database.db"
-IMG_OPT_FOLDER = "img_opt"
-
-def optimize_single_image(image_path):
-    """Abre la imagen desde disco, la recorta/optimiza y la guarda en img_opt/."""
-    if not image_path or not os.path.exists(image_path):
-        return "imagenes/image_not_found.png"
-    
-    try:
-        filename = os.path.basename(image_path)
-        path_opt = os.path.join(IMG_OPT_FOLDER, f"opt_{filename}")
-        
-        img = Image.open(image_path).convert("RGB")
-        img = ImageOps.fit(img, (550, 400))
-        img.save(path_opt, quality=80, optimize=True)
-        
-        return path_opt
-    except Exception as e:
-        print(f"Error optimitzant {image_path}: {e}")
-        return "imagenes/image_not_found.png"
-
-def update_all_items_images():
-    # 1. Asegurar que existe la carpeta de destino
-    os.makedirs(IMG_OPT_FOLDER, exist_ok=True)
-    
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    
-    # 2. Obtener todos los ítems existentes
-    cursor.execute("SELECT item_id, image FROM items")
-    rows = cursor.fetchall()
-    
-    print(f"Processant {len(rows)} articles...")
-    
-    # 3. Optimizar y actualizar cada registro
-    updated_count = 0
-    for item_id, original_image_path in rows:
-        path_opt = optimize_single_image(original_image_path)
-        
-        cursor.execute(
-            "UPDATE items SET image_optimized = ? WHERE item_id = ?",
-            (path_opt, item_id)
-        )
-        updated_count += 1
-
-    conn.commit()
-    conn.close()
-    
-    print(f"✅ Procés finalitzat amb èxit. {updated_count} ítems actualitzats.")
-
-#if __name__ == "__main__":
-update_all_items_images()
-#-----------------------------------
