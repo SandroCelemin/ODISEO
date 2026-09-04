@@ -3,7 +3,7 @@ import io
 import requests
 
 from db import delete_item, get_items_from_user
-from services.utils import get_image_url
+from services.utils import get_image_url, renderizar_imagen
 from PIL import Image, ImageOps
 
 SUPABASE_STORAGE_BASE = "https://udmlukpnhvkedmhuvsec.supabase.co/storage/v1/object/public"
@@ -36,7 +36,7 @@ def ampliar_imagen(item):
     url = get_image_url("img", item["image"])
     st.image(url, use_container_width=True)
     """
-    renderizar_imagen(item["image"], "img", (275, 200), "normal", False)
+    renderizar_imagen(item["image"], "img", (275, 200), "normal", False, False)
     #st.caption("Utilitza les fletxes de la cantonada superior dreta si vols veure-la encara més gran.")
 
 def render_user_items():
@@ -111,7 +111,7 @@ def render_user_items():
                         url = get_image_url("img_opt", item["image_optimized"])
                         st.image(url, use_container_width=True)
                         """
-                        renderizar_imagen(item["image_optimized"], "img_opt", (275, 200), "normal", False)
+                        renderizar_imagen(item["image_optimized"], "img_opt", (275, 200), "normal", False, True)
 
                             
                         if st.button("Ampliar imatge", icon=":material/zoom_in:", key=item["item_id"], use_container_width=True):
