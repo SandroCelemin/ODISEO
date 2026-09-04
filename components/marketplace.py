@@ -6,7 +6,7 @@ import streamlit as st
 from engine import get_items_from_have_chains
 from db import delete_item, get_items_from_user, get_reserved_items, get_user_by_username
 from services.search import first_distance_items
-from services.utils import get_pil_image
+from services.utils import get_pil_image, renderizar_imagen
 
 from PIL import Image, ImageOps, ImageEnhance, ImageDraw, ImageFont
 
@@ -154,19 +154,23 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
                 
                 if path:
                     # Convierte la ruta de Supabase en un objeto PIL listo para manipular
-                    img = get_pil_image(path, bucket_name="img_opt")
+                    #img = get_pil_image(path, bucket_name="img_opt")
                     
-                    if img is not None:
-                        if locked_or_reserved:
-                            enhancer = ImageEnhance.Color(img)
-                            img = enhancer.enhance(0.5)
-                            img = desvanecer_imagen(img, 0.5)
-                            img = agregar_insignia_reservado(img)
+                    #if img is not None:
+                    if locked_or_reserved:
                         """
-                        else:
-                            img = obtener_imagen_item(path, locked_or_reserved)
+                        enhancer = ImageEnhance.Color(img)
+                        img = enhancer.enhance(0.5)
+                        img = desvanecer_imagen(img, 0.5)
+                        img = agregar_insignia_reservado(img)
                         """
-                        st.image(img, use_container_width=True)
+                        renderizar_imagen(item.get("image_optimized"), "img_opt", (star_size, star_size), "normal", True, False)
+                    """
+                    else:
+                        img = obtener_imagen_item(path, locked_or_reserved)
+                    """
+                    #st.image(img, use_container_width=True)
+                    renderizar_imagen(item.get("image_optimized"), "img_opt", (star_size, star_size), "normal", False, False)
                     
                 # ───── TEXT ─────
                 user = get_user_by_username(item["user"])
