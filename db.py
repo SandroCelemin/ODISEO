@@ -6,7 +6,6 @@ import streamlit as st
 
 from services.match import directional_match_want, directional_match_have
 
-
 # =============================
 # FUNCIONES PARA INICIAR LA DB
 # =============================
@@ -328,7 +327,12 @@ def get_items():
     conn = get_conn()
     c = conn.cursor(cursor_factory=RealDictCursor)
     try:
-        c.execute("SELECT * FROM items;")
+        # Traemos todos los campos del item + el rating del usuario
+        c.execute("""
+            SELECT i.*, u.rating
+            FROM items i
+            LEFT JOIN users u ON i."user" = u.username;
+        """)
         return c.fetchall()
     except Exception as e:
         print(f"Error al obtener items: {e}")
@@ -341,7 +345,12 @@ def get_item_from_item_id(item_id):
     conn = get_conn()
     c = conn.cursor(cursor_factory=RealDictCursor)
     try:
-        c.execute("SELECT * FROM items WHERE item_id = %s;", (item_id,))        
+        c.execute("""
+            SELECT i.*, u.rating
+            FROM items i
+            LEFT JOIN users u ON i."user" = u.username
+            WHERE item_id = %s;
+        """, (item_id,))        
         return c.fetchone()
     except Exception as e:
         print(f"Error al obtener item por ID: {e}")
@@ -354,7 +363,12 @@ def get_items_from_user(user):
     conn = get_conn()
     c = conn.cursor(cursor_factory=RealDictCursor)
     try:
-        c.execute('SELECT * FROM items WHERE "user" = %s AND status = \'active\';', (user,))
+        c.execute("""
+            SELECT i.*, u.rating
+            FROM items i
+            LEFT JOIN users u ON i."user" = u.username
+            WHERE "user" = %s AND status = 'active';
+        """, (user,))
         return c.fetchall()
     except Exception as e:
         print(f"Error al obtener items del usuario: {e}")
