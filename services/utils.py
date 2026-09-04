@@ -7,7 +7,7 @@ from supabase import create_client
 from difflib import SequenceMatcher
 from rapidfuzz import fuzz, utils
 
-from PIL import Image, ImageOps, ImageDraw, ImageEnhance
+from PIL import Image, ImageOps, ImageDraw, ImageEnhance, ImageFont
 
 def similarity(query: str, target: str) -> float:
     # utils.default_process normaliza acentos, mayúsculas y signos automáticamente
