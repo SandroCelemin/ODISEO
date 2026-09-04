@@ -170,6 +170,7 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
                         img = obtener_imagen_item(path, locked_or_reserved)
                     """
                     #st.image(img, use_container_width=True)
+                    
                     else:
                         renderizar_imagen(item.get("image_optimized"), "img_opt", (None, None), "normal", False, False)
                     
