@@ -150,7 +150,7 @@ def render_batch(batch_items, num_columnas):
                 #path = item.get("image_optimized") or item.get("image")
                 
                 if item.get("image_optimized"):
-                    renderizar_imagen(item.get("image_optimized"), "img_opt", (None, None), "normal", locked_or_reservede, False)
+                    renderizar_imagen(item.get("image_optimized"), "img_opt", (None, None), "normal", locked_or_reserved, False)
 
                 # ───── TEXT ─────                
                 user_rating = item.get("rating")
