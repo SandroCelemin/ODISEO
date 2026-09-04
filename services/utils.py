@@ -132,9 +132,16 @@ def agregar_insignia_reservado(img: Image.Image) -> Image.Image:
         
     return Image.alpha_composite(img, overlay)
 
-def renderizar_imagen(file_name: str, bucket_name: str = None, size: tuple = (275, 200), shape: str = "normal", reserved: bool = False):
+def renderizar_imagen(
+    file_name: str, 
+    bucket_name: str = None, 
+    size: tuple = (275, 200), 
+    shape: str = "normal", 
+    reserved: bool = False,
+    crop: bool = True  # <-- Nuevo parámetro con valor por defecto True
+):
     """
-    Descarga, recorta, aplica filtros de estado (reservado) y pinta en Streamlit.
+    Descarga, recorta (opcional), aplica filtros de estado (reservado) y pinta en Streamlit.
     """
     if not file_name:
         return
@@ -145,8 +152,11 @@ def renderizar_imagen(file_name: str, bucket_name: str = None, size: tuple = (27
         st.warning("No se pudo cargar la imagen.")
         return
 
-    # 2. Recortar al tamaño exacto
-    img_fit = ImageOps.fit(img, size, centering=(0.5, 0.5))
+    # 2. Recortar solo si crop=True
+    if crop and size:
+        img_fit = ImageOps.fit(img, size, centering=(0.5, 0.5))
+    else:
+        img_fit = img.copy()
 
     # 3. Aplicar filtros si está reservado
     if reserved:
@@ -155,14 +165,16 @@ def renderizar_imagen(file_name: str, bucket_name: str = None, size: tuple = (27
         img_fit = desvanecer_imagen(img_fit, 0.5)     # Aclarar
         img_fit = agregar_insignia_reservado(img_fit) # Etiqueta
 
-    # 4. Aplicar forma circular si es perfil
+    # 4. Aplicar forma circular usando las dimensiones reales de la imagen
     if shape == "circular":
-        mask = Image.new("L", size, 0)
+        actual_size = img_fit.size  # Se adapta al tamaño real si no se recortó
+        mask = Image.new("L", actual_size, 0)
         draw = ImageDraw.Draw(mask)
-        draw.ellipse((0, 0, size[0], size[1]), fill=255)
+        draw.ellipse((0, 0, actual_size[0], actual_size[1]), fill=255)
         img_fit.putalpha(mask)
 
     # 5. Pintar en la interfaz
-    st.image(img_fit, use_container_width=True)    
+    st.image(img_fit, use_container_width=True)
+    
 def similarity_antiguo(a, b):
     return SequenceMatcher(None, a.lower(), b.lower()).ratio()
