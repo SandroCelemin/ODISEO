@@ -10,6 +10,7 @@ from db import (
     get_user_by_username,
     leave_chain,
 )
+
 from services.utils import renderizar_imagen
 from PIL import Image, ImageOps
 import requests
