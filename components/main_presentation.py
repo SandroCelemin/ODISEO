@@ -1,4 +1,5 @@
 import streamlit as st
+from utils import get_image_url
 #import base64
 #import os
 
@@ -17,11 +18,14 @@ def render_presentation(supabase):
         st.warning("No hay imágenes en el bucket.")
         return
 
-    # 2. Generar URLs públicas
-    images_urls = [
-        supabase.storage.from_(bucket_name).get_public_url(f_name)
+    # 2. Generar URLs públicas usando get_image_url
+    raw_urls = [
+        get_image_url(bucket_name, f_name)
         for f_name in sorted(found_files)
     ]
+    
+    images_urls = [url for url in raw_urls if url]
+    
     num_images = len(images_urls)
     
     # 3. Temps de l'animació
