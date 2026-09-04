@@ -213,7 +213,8 @@ if render_auth(supabase):
 
 # ───────── CREATE ─────────
 if st.session_state.user and st.session_state.show_create:
-    render_create(items)
+    
+    render_create(items, supabase)
     st.stop()
 
 # ───────── Menu lateral ─────────
