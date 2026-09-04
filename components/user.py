@@ -89,7 +89,7 @@ def render_user(username):
         else:
             st.image(f"https://api.dicebear.com/7.x/bottts/svg?seed={username}", width=avatar_size)
         """
-        renderizar_imagen(user.get("user_image"), "imagenes_users", (avatar_size, avatar_size), "circular", False)
+        renderizar_imagen(user.get("user_image"), "imagenes_users", (avatar_size, avatar_size), "circular", False, True)
 
     with col_info:
         st.header(user.get("username", username))
@@ -110,7 +110,7 @@ def render_user(username):
                         img_recortada = ImageOps.fit(img_star, (star_size, star_size))
                         st.image(img_recortada)
                         """
-                        renderizar_imagen(star_path, "img_sistema", (star_size, star_size), "normal", False)
+                        renderizar_imagen(star_path, "img_sistema", (star_size, star_size), "normal", False, True)
                     else:
                         st.write("★")
 
