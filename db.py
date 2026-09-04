@@ -541,10 +541,26 @@ def add_chains(item_ids):
         )
         
         for position, item_id in enumerate(item_ids):
+            # Insertar los datos de la cadena en chain_items
             c.execute("""
                 INSERT INTO chain_items (chain_id, item_id, position)
                 VALUES (%s, %s, %s);
             """, (chain_id, item_id, position))
+            
+            # Obtener el dueño del artículo y el nombre de lo que ofrece ("have")
+            c.execute("""
+                SELECT "user", "have"
+                FROM items WHERE item_id = %s;
+            """, (item_id,))
+            
+            item_owner_and_have = c.fetchone()
+            
+            # Enviar la notificacion
+            user_owner, item_name = item_owner_and_have[0], item_owner_and_have[1]
+            message = f"🎉 Enhorabona! El teu article '{item_name}' ha entrat en la nova cadena d'intercanvi #{chain_id}!"
+            
+            # Se pasa 'cursor=c' para que la notificación forme parte de la misma transacción
+            add_notification(user_owner, item_id, message, cursor=c)
             
         conn.commit()
         return chain_id
