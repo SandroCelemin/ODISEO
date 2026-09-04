@@ -155,8 +155,8 @@ def renderizar_imagen(file_name: str, bucket_name: str = None, size: tuple = (27
         img_fit = desvanecer_imagen(img_fit, 0.5)     # Aclarar
         img_fit = agregar_insignia_reservado(img_fit) # Etiqueta
 
-    # 4. Aplicar forma redonda si es perfil
-    if shape == "redonda":
+    # 4. Aplicar forma circular si es perfil
+    if shape == "circular":
         mask = Image.new("L", size, 0)
         draw = ImageDraw.Draw(mask)
         draw.ellipse((0, 0, size[0], size[1]), fill=255)
