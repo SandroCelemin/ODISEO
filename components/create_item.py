@@ -7,6 +7,7 @@
 # ---------------------------------------------------------------------------
 import streamlit as st
 import os
+import io
 
 from db import get_items, add_item, add_chains, get_items_from_user
 from models import row_to_item
@@ -15,6 +16,19 @@ from components.marketplace import render_marketplace
 from components.detail import render_detail
 from PIL import Image, ImageOps
 
+def optimize_image(file_bytes):
+    # Abrir directamente los bytes usando io.BytesIO
+    img = Image.open(io.BytesIO(file_bytes)).convert("RGB")
+    img = ImageOps.fit(img, (550, 400))
+    
+    # Guardar en un buffer de memoria en vez del disco local
+    buffer = io.BytesIO()
+    img.save(buffer, format="JPEG", quality=80, optimize=True)
+    
+    # Devolver los bytes optimizados
+    return buffer.getvalue()
+    
+"""
 def optimize_image(path, image):
     img = Image.open(path).convert("RGB")
     img = ImageOps.fit(img, (550, 400))
@@ -26,7 +40,7 @@ def optimize_image(path, image):
     img.save(path_opt, quality=80, optimize=True)
     
     return path_opt
-
+"""
 def update_have():
     st.session_state.have = st.session_state.have_input
 
@@ -126,7 +140,7 @@ def show_onboarding():
         st.session_state.step = 1
         st.rerun()
 
-def render_create(items):
+def render_create(items, supabase):
 
     #st.write(st.session_state.have)
     #st.write(st.session_state.want)
@@ -170,8 +184,8 @@ def render_create(items):
             uploaded_file = st.file_uploader("Imatge (png / jpg / jpeg)", type=["png", "jpg", "jpeg"], key="image_input", on_change=update_image)
             
             if st.session_state.get("image") is not None:
-                img_original = Image.open(st.session_state.image)
-                img_recortada = ImageOps.fit(img_original, (275, 200)) #ImageOps.fit s'encarrega que no es deformi la foto en retallar-la
+                img_original = Image.open(io.BytesIO(st.session_state.image.getvalue()))
+                img_recortada = ImageOps.fit(img_original, (275, 200))
                 st.image(img_recortada)
     
             col1, col2, col3 = st.columns(3)
@@ -250,29 +264,58 @@ def render_create(items):
                         st.error("No has introduït l'article que vols aconseguir.")
                     else:
                         image = st.session_state.get("image")
+                        bucket_orig_name = "img"
+                        bucket_opt_name = "img_opt"
 
-                        path = "imagenes/image_not_found.png"
-                        path_opt = "imagenes/image_not_found.png"
-                        image_optimized = "imagenes/image_not_found.png"
+                        #path = "imagenes/image_not_found.png"
+                        #path_opt = "imagenes/image_not_found.png"
+                        #image_optimized = "imagenes/image_not_found.png"
                         
                         if image:
                             #path = f"img_{image.name}"
-                            path = os.path.join("img", f"img_{image.name}")
+                            #path = os.path.join("img", f"img_{image.name}")
 
+                            file_bytes_orig = image.getvalue()
+                            file_name_orig = f"orig_{st.session_state.user}_{image.name}"
+                            
+                            supabase.storage.from_(bucket_orig_name).upload(
+                                path=file_name_orig,
+                                file=file_bytes_orig,
+                                file_options={"content-type": image.type, "upsert": "true"}
+                            )
+                            image_url = supabase.storage.from_(bucket_orig_name).get_public_url(file_name_orig)
+
+                            # 2. Imatge Optimitzada
+                            file_bytes_opt = optimize_image(file_bytes_orig)
+                            file_name_opt = f"opt_{st.session_state.user}_{image.name}"
+
+                            supabase.storage.from_(bucket_opt_name).upload(
+                                path=file_name_opt,
+                                file=file_bytes_opt,
+                                file_options={"content-type": "image/jpeg", "upsert": "true"}
+                            )
+                            image_opt_url = supabase.storage.from_(bucket_opt_name).get_public_url(file_name_opt)
+
+                        else:
+                            # URL per defecte si l'usuari no penja cap imatge
+                            image_url = supabase.storage.from_(bucket_orig_name).get_public_url("image_not_found.png")
+                            image_opt_url = image_url
+                            
                             # Es guarda la imatge al disc d'aquesta manera perquè image no té 
                             # la propietat .save ja que és d'un file uploader
-                            with open(path, "wb") as f:
-                                f.write(image.getbuffer())
+                            #with open(path, "wb") as f:
+                            #    f.write(image.getbuffer())
                             
-                            path_opt = optimize_image(path, image)
+                            #path_opt = optimize_image(path, image)
         
                         # add_item(user, have, description, image, image_optimized, want, category)
+                        # Guardar en PostgreSQL les URLs públiques en comptes de camins locals
                         add_item(
                             st.session_state.user,
                             st.session_state.have,
                             st.session_state.description,
-                            path,
-                            path_opt,
+                            image_url,
+                            image_opt_url,
                             st.session_state.want,
                             ""
                         )
@@ -285,23 +328,22 @@ def render_create(items):
                         """
                         items = get_items()
                         mis_items = get_items_from_user(st.session_state.user)
-                        print("mis items", mis_items)
+                        #print("mis items", mis_items)
                         último_item_creado = mis_items[-1] # L'article que s'acaba de crear serà, per definició, l'ÚLTIM de la seva llista
                         
-                        print("AquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAqui", último_item_creado)
+                        #print("AquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAquiAqui", último_item_creado)
                         
                         
                         cycles = find_all_chains("dfs_modified", "have", items, último_item_creado["item_id"])
-                        print("sale")
-                        print("ciclos", cycles)
+                        #print("sale")
+                        #print("ciclos", cycles)
                         
                         if cycles:
-                            
                             for cycle in cycles:
                                 add_chains(cycle)
                                 
                         else:
-                            print("What?What?What?What?What?What?What?What?What?What?What?What?What?What?What?What?What?What?")
+                            print("Ciclos no detectados")
                         
                         limpiar_y_regresar()
                     
