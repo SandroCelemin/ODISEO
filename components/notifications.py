@@ -7,6 +7,7 @@
 #-----------
 import streamlit as st
 
+from services.utils import renderizar_imagen
 from datetime import datetime, date, timedelta
 from db import get_notifications, mark_notifications_as_read
 from engine import find_all_chains
@@ -106,9 +107,12 @@ def render_notifications():
                 with col_icon:
                     # Si no s'ha vist en aquesta pestanya (0 o 1), mostrem el punt blau de "Nova"
                     if n["is_read"] < 2:
+                        """
                         img_original = Image.open("new_ca.jpg")
                         img_recortada = ImageOps.fit(img_original, (500, 200)) #ImageOps.fit s'encarrega que no es deformi la foto en retallar-la
                         st.image(img_recortada, use_container_width=True)
+                        """
+                        renderizar_imagen("new_ca.jpg", "img_sistema", (500, 200), "normal", False, True)
 
                     else:
                         st.markdown(":material/mail:")
