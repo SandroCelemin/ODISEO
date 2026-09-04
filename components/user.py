@@ -4,6 +4,7 @@ from PIL import Image, ImageDraw, ImageOps
 import streamlit as st
 
 from components.marketplace import render_marketplace
+from services.utils import renderizar_imagen
 from db import get_items_from_user, get_user_by_username
 
 SUPABASE_STORAGE_BASE = "https://udmlukpnhvkedmhuvsec.supabase.co/storage/v1/object/public"
@@ -75,6 +76,7 @@ def render_user(username):
     col_avatar, col_info = st.columns([1, 4])
 
     with col_avatar:
+        """
         user_img_path = user.get("user_image")
         if user_img_path and not user_img_path.startswith("http") and not user_img_path.startswith("imagenes_users/"):
             user_img_path = f"imagenes_users/{user_img_path}"
@@ -86,6 +88,8 @@ def render_user(username):
             st.image(img_circular)
         else:
             st.image(f"https://api.dicebear.com/7.x/bottts/svg?seed={username}", width=avatar_size)
+        """
+        renderizar_imagen(user.get("user_image"), "imagenes_users", (avatar_size, avatar_size), "circular", False)
 
     with col_info:
         st.header(user.get("username", username))
@@ -98,12 +102,15 @@ def render_user(username):
 
             for i, col in enumerate(cols, start=1):
                 star_path = get_star_image(i, rating)
-                img_star = load_supabase_image(star_path)
+                #img_star = load_supabase_image(star_path)
 
                 with col:
-                    if img_star:
+                    if star_path:
+                        """
                         img_recortada = ImageOps.fit(img_star, (star_size, star_size))
                         st.image(img_recortada)
+                        """
+                        renderizar_imagen(star_path, "img_sistema", (star_size, star_size), "normal", False)
                     else:
                         st.write("★")
 
