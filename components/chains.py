@@ -164,7 +164,7 @@ def render_chain_card(chain_id, pasos, item_status, chain_status, star_size):
 
     current_step = st.session_state[state_key]
     total_steps = len(pasos)
-    rating = chains[chain_id][0]["chain_rating"]
+    rating = passo[0]["chain_rating"]
 
     with st.container(border=True):
         col1, col2, col3, _ = st.columns([4, 3, 1, 7])
