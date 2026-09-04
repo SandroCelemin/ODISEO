@@ -129,17 +129,14 @@ def agregar_insignia_reservado(img: Image.Image) -> Image.Image:
     imagen_final = Image.alpha_composite(img, overlay)
     return imagen_final.convert("RGB")
 
-# 🚀 OPTIMITZACIÓ: Utilitzar un fragment perquè només es torni a renderitzar la quadrícula
-@st.fragment
-def render_grid_con_paginacion(filtered_items, num_columnas):
-    total_items = len(filtered_items)
-    items_to_show = filtered_items[:st.session_state.items_limit]
-
-    reserved_ids = get_reserved_items(items_to_show)
+# 🚀 Renderiza un único lote de 15 artículos de forma aislada
+def render_batch(batch_items, num_columnas):
+    # Consulta a la base de datos SOLO para los 15 artículos de este lote
+    reserved_ids = get_reserved_items(batch_items)
 
     # ───── GRID ─────
-    for i in range(0, len(items_to_show), num_columnas):
-        row = items_to_show[i:i + num_columnas]
+    for i in range(0, len(batch_items), num_columnas):
+        row = batch_items[i:i + num_columnas]
         cols = st.columns(num_columnas)
 
         for col, item in zip(cols, row):
@@ -153,25 +150,10 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
                 #path = item.get("image_optimized") or item.get("image")
                 
                 if item.get("image_optimized"):
-                    # Convierte la ruta de Supabase en un objeto PIL listo para manipular
-                    #img = get_pil_image(path, bucket_name="img_opt")
-                    
-                    #if img is not None:
-                    if locked_or_reserved:
-                        renderizar_imagen(item.get("image_optimized"), "img_opt", (None, None), "normal", True, False)
+                    renderizar_imagen(item.get("image_optimized"), "img_opt", (None, None), "normal", locked_or_reservede, False)
 
-                    else:
-                        renderizar_imagen(item.get("image_optimized"), "img_opt", (None, None), "normal", False, False)
-
-                # ───── TEXT ─────
-                """
-                user = get_user_by_username(item["user"])
-                
-                st.subheader(f"**{item['have']}**")
-                st.write(f":grey[{user['username']}] ★ {user['rating']}")
-                """
-                
-                user_rating = item["rating"]
+                # ───── TEXT ─────                
+                user_rating = item.get("rating")
                 
                 st.subheader(f"**{item['have']}**")
                 st.write(f":grey[{user_rating}] ★ {user_rating}")
@@ -181,13 +163,27 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
                     st.session_state.detail_item = item["item_id"]
                     st.rerun()
 
+# 🚀 OPTIMITZACIÓ: Utilitzar un fragment perquè només es torni a renderitzar la quadrícula
+@st.fragment
+def render_grid_con_paginacion(filtered_items, num_columnas):
+    total_items = len(filtered_items)
+    batch_size = num_columnas * 3  # Tamaño de cada bloque (ej. 5 cols * 3 filas = 15 ítems)
+    
+    items_to_show = filtered_items[:st.session_state.items_limit]
+
+    # ───── ITERACIÓN POR LOTES (BATCHES) ─────
+    # En lugar de iterar ítem a ítem todo el array, procesamos bloques de 15
+    for batch_start in range(0, len(items_to_show), batch_size):
+        batch_items = items_to_show[batch_start : batch_start + batch_size]
+        render_batch(batch_items, num_columnas)
+
     # ───── BOTÓ DE PAGINACIÓ ─────
     if st.session_state.items_limit < total_items:
         st.html("<br>")
         st.caption(f"Mostrant **{len(items_to_show)}** de **{total_items}** articles disponibles")
 
         def show_more():
-            st.session_state.items_limit += num_columnas * 3
+            st.session_state.items_limit += batch_size
 
         st.button(
             "Mostrar més articles", 
