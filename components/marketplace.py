@@ -164,13 +164,13 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
                         img = desvanecer_imagen(img, 0.5)
                         img = agregar_insignia_reservado(img)
                         """
-                        renderizar_imagen(item.get("image_optimized"), "img_opt", (star_size, star_size), "normal", True, False)
+                        renderizar_imagen(item.get("image_optimized"), "img_opt", (None, None), "normal", True, False)
                     """
                     else:
                         img = obtener_imagen_item(path, locked_or_reserved)
                     """
                     #st.image(img, use_container_width=True)
-                    renderizar_imagen(item.get("image_optimized"), "img_opt", (star_size, star_size), "normal", False, False)
+                    renderizar_imagen(item.get("image_optimized"), "img_opt", (None, None), "normal", False, False)
                     
                 # ───── TEXT ─────
                 user = get_user_by_username(item["user"])
