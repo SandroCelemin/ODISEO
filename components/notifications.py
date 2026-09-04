@@ -56,6 +56,7 @@ def render_notifications():
     
     notificaciones_agrupadas = {}
     
+    """
     for notif in all_notifications:
         
         created_at = notif["created_at"]
@@ -70,6 +71,25 @@ def render_notifications():
         #associant amb strptime cadascuna amb la naturalesa dels seus elements
         notification_date = datetime.strptime(notification_date_str, "%Y-%m-%d").date()
         notification_time = datetime.strptime(notification_time_str, "%H:%M:%S").time()
+    """
+    
+    for notif in all_notifications:
+
+        created_at = notif["created_at"]
+        message = notif["message"]
+        is_read = notif["is_read"]
+
+        # Si viene como string se convierte, si ya es datetime se usa directamente
+        if isinstance(created_at, str):
+            # Limpiamos posibles milisegundos si la BD los incluye
+            created_at_clean = created_at.split(".")[0] 
+            created_dt = datetime.strptime(created_at_clean, "%Y-%m-%d %H:%M:%S")
+        else:
+            created_dt = created_at
+
+        notification_date = created_dt.date()
+        notification_time = created_dt.time()
+        
         
         #print(notification_time)
 
