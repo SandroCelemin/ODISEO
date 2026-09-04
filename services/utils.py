@@ -111,7 +111,7 @@ def agregar_insignia_reservado(img: Image.Image) -> Image.Image:
     
     ancho, alto = img.size
     margen = 10
-    ancho_badge = 400  # Corregido (antes 4000)
+    ancho_badge = 300  # Corregido (antes 4000)
     alto_badge = 60
     
     x1 = ancho - ancho_badge - margen
