@@ -173,7 +173,7 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
                     
                     else:
                         renderizar_imagen(item.get("image_optimized"), "img_opt", (None, None), "normal", False, False)
-                    
+
                 # ───── TEXT ─────
                 user = get_user_by_username(item["user"])
                 
@@ -199,6 +199,8 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
             key="load_more_items", 
             on_click=show_more
         )
+
+
 
 def render_marketplace(items, mode): #mode pot ser "suggestions" (per a create_item) o "main" (per a la marketplace)
 
