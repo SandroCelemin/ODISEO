@@ -133,6 +133,240 @@ def ampliar_imagen(ruta_imagen, item):
     """
     renderizar_imagen(item["image"], "img", (275, 200), "normal", False)
 
+# FRAGMENTO INDIVIDUAL DE CADA CADENA PARA OPTIMIZACION
+@st.fragment
+def render_chain_card(chain_id, pasos, item_status, chain_status, star_size):
+    
+    st.markdown(
+        """
+        <style>
+        div[class*="st-key-ok_"] button,
+        div[class*="st-key-btn_leave_"] button,
+        div[class*="st-key-confirm"] button {
+            background-color: #0A0C10 !important;
+            color: white !important;
+            font-weight: bold !important;
+        }
+        div[class*="st-key-ok_"] button:hover,
+        div[class*="st-key-btn_leave_"] button:hover,
+        div[class*="st-key-confirm"] button:hover {
+            background-color: #2C3649 !important;
+            color: white !important;
+        }
+        </style>
+    """,
+        unsafe_allow_html=True,
+    )
+
+    state_key = f"step_index_{chain_id}"
+    if state_key not in st.session_state:
+        st.session_state[state_key] = 0
+
+    current_step = st.session_state[state_key]
+    total_steps = len(pasos)
+    rating = chains[chain_id][0]["chain_rating"]
+
+    with st.container(border=True):
+        col1, col2, col3, _ = st.columns([4, 3, 1, 7])
+
+        with col1:
+            st.subheader(f"Cadena d'intercanvi #{chain_id}")
+
+        with col2:
+            cols = st.columns(5, gap="xxsmall")
+            for i, col in enumerate(cols, start=1):
+                star_img = get_star_image(i, rating)
+                #img_original = Image.open(star_img)
+                #img_recortada = ImageOps.fit(
+                #    img_original, (star_size, star_size)
+                #)
+
+                with col:
+                    #st.image(img_recortada)
+                    renderizar_imagen(star_img, "img_sistema", (star_size, star_size), "normal", False)
+
+        with col3:
+            st.subheader(rating)
+
+        col_progress, col_btn = st.columns([4, 1])
+
+        with col_progress:
+            porcentaje_progreso = (current_step / (total_steps - 1)) * 100
+            ancho_telon = 100 - porcentaje_progreso
+
+            segmentos_html = ""
+            for i in range(total_steps - 1):
+                color_segmento = (
+                    "#24b653"
+                    if pasos[i]["status"] == "accepted"
+                    else "#FF9F4B"
+                )
+                segmentos_html += f'<div class="progress-segment" style="background-color: {color_segmento};"></div>'
+
+            nodos_html = ""
+            for i in range(total_steps):
+                status_nodo = pasos[i]["status"]
+                clase_activa = "active" if i <= current_step else ""
+                clase_viendo = "viendo" if i == current_step else ""
+                clase_mine = "is-mine" if pasos[i].get("is_mine") else ""
+                nodos_html += f'<div class="step-node {clase_activa} {status_nodo} {clase_viendo} {clase_mine}">{i+1}</div>'
+
+            html_code = f"""
+            <style>
+            .stepper-container {{ position: relative; display: flex; justify-content: space-between; align-items: center; width: 90%; padding: 30px 15px 10px 15px; margin-bottom: 20px; box-sizing: border-box; }}
+            .stepper-color-track {{ position: absolute; left: 12px; right: 12px; height: 4px; display: flex; z-index: 1; }}
+            .progress-segment {{ flex-grow: 1; height: 100%; }}
+            .stepper-curtain {{ position: absolute; right: 0; top: 0; bottom: 0; background-color: #E0E0E0; transition: width 0.4s ease-in-out; z-index: 2; }}
+            .step-node {{ position: relative; width: 24px; height: 24px; border-radius: 50%; background-color: #E0E0E0; color: #888888; font-size: 13px; font-weight: bold; display: flex; justify-content: center !important; align-items: center !important; z-index: 3; box-shadow: 0 0 0 6px white; transition: all 0.3s ease-in-out; }}
+            .step-node.is-mine::after {{ content: "Tu"; position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 800; color: #0A0C10; white-space: nowrap; }}
+            .step-node.active {{ background-color: #FF9F4B; color: white; }}
+            .step-node.accepted {{ background-color: #24b653 !important; color: white !important; }}
+            .step-node.declined {{ background-color: #FF9F4B !important; color: white !important; }}
+            .step-node.viendo {{ transform: scale(1.1); box-shadow: 0 0 0 3px white, 0 0 0 6px #000000 !important; z-index: 4; }}
+            </style>
+
+            <div class="stepper-container">
+                <div class="stepper-color-track">
+                    {segmentos_html}
+                    <div class="stepper-curtain" style="width: {ancho_telon}%;"></div>
+                </div>
+                {nodos_html}
+            </div>
+            """
+            st.markdown(html_code, unsafe_allow_html=True)
+            st.write("")
+
+        with col_btn:
+            if item_status == "neutral" and chain_status == "pending":
+                if st.button(
+                    "Acceptar cadena",
+                    key=f"ok_{chain_id}",
+                    use_container_width=True,
+                ):
+                    confirm("acceptar", item_id, chain_id)
+                if st.button(
+                    "Rebutjar cadena",
+                    key=f"ko_{chain_id}",
+                    use_container_width=True,
+                ):
+                    confirm("rebutjar", item_id, chain_id)
+
+            elif item_status == "accepted" and chain_status == "pending":
+                if st.button(
+                    "Sortir de la cadena",
+                    key=f"btn_leave_{chain_id}",
+                    use_container_width=True,
+                ):
+                    confirm("sortir de", item_id, chain_id)
+                if st.button(
+                    "Rebutjar cadena",
+                    key=f"btn_reject_acc_{chain_id}",
+                    use_container_width=True,
+                ):
+                    confirm("rebutjar", item_id, chain_id)
+
+        item = get_item_from_item_id(pasos[current_step]["item_id"])
+
+        (
+            col_btn_previous,
+            col_image,
+            col_info,
+            col_btn_next,
+        ) = st.columns([1, 6, 6, 1], gap="medium")
+
+        st.markdown(
+            """
+            <style>
+            div[class*="st-key-prev_"] button,
+            div[class*="st-key-next_"] button {
+                height: 300px !important;
+                background-color: #F0F2F6 !important;
+                color: #555555 !important;
+                border: none !important;
+                border-radius: 8px !important;
+                transition: all 0.3s ease !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                line-height: 1 !important;
+            }
+            div[class*="st-key-prev_"] button *,
+            div[class*="st-key-next_"] button * {
+                font-size: 35px !important;
+                line-height: 1 !important;
+                display: block !important;
+            }
+            div[class*="st-key-prev_"] button:hover,
+            div[class*="st-key-next_"] button:hover {
+                background-color: #D2D8E4 !important;
+                color: #FF4B4B !important;
+            }
+            </style>
+        """,
+            unsafe_allow_html=True,
+        )
+
+        with col_btn_previous:
+            st.button(
+                "❮",
+                key=f"prev_{chain_id}",
+                use_container_width=True,
+                on_click=prev_step,
+                args=(state_key, current_step, total_steps),
+            )
+
+        with col_image:
+            img_src = item.get("image_optimized") or item.get("image")
+            """
+            if img_src:
+                # Descarga de la URL pública de Supabase
+                img_original = (
+                    Image.open(io.BytesIO(requests.get(img_src).content))
+                    if str(img_src).startswith("http")
+                    else Image.open(img_src)
+                )
+                img_recortada = ImageOps.fit(img_original, (500, 200))
+                st.image(img_recortada, use_container_width=True)
+            """
+            renderizar_imagen(item.get("image_optimized"), "img_opt", (500, 200), "normal", False)
+
+            if st.button(
+                "Ampliar imatge",
+                icon=":material/zoom_in:",
+                key=f"{chain_id}_{item['item_id']}",
+                use_container_width=True,
+            ):
+                ampliar_imagen(item["image"], item)
+
+        with col_info:
+            user = get_user_by_username(item["user"])
+            st.write(
+                f"**Usuari:** {item['user']} :grey[★ ({user['rating']})]"
+            )
+            st.write(f"**Ofereix:** {item['have']}")
+            st.write(f"**Vol aconseguir:** {item['want']}")
+
+            if pasos[current_step]["status"] == "neutral":
+                st.write(
+                    "**Què li sembla l'intercanvi?** :orange[Esperant resposta]"
+                )
+            elif pasos[current_step]["status"] == "accepted":
+                st.write(
+                    "**Què li sembla l'intercanvi?** :green[Accepta l'intercanvi]"
+                )
+
+            with st.expander("Veure descripció de l'article"):
+                st.write(f"**Descripció:** {item['description']}")
+
+        with col_btn_next:
+            st.button(
+                "❯",
+                icon_position="right",
+                key=f"next_{chain_id}",
+                use_container_width=True,
+                on_click=next_step,
+                args=(state_key, current_step, total_steps),
+            )
 
 def chain_detail(item_id, chain_status, item_status, tab):
     conn = get_conn()
@@ -222,238 +456,9 @@ def chain_detail(item_id, chain_status, item_status, tab):
             "chain_rating": chain_rating,
         })
 
+    # Renderizamos cada tarjeta en su propio fragmento aislado
     for chain_id, pasos in chains.items():
-        st.markdown(
-            """
-            <style>
-            div[class*="st-key-ok_"] button,
-            div[class*="st-key-btn_leave_"] button,
-            div[class*="st-key-confirm"] button {
-                background-color: #0A0C10 !important;
-                color: white !important;
-                font-weight: bold !important;
-            }
-            div[class*="st-key-ok_"] button:hover,
-            div[class*="st-key-btn_leave_"] button:hover,
-            div[class*="st-key-confirm"] button:hover {
-                background-color: #2C3649 !important;
-                color: white !important;
-            }
-            </style>
-        """,
-            unsafe_allow_html=True,
-        )
-
-        state_key = f"step_index_{chain_id}"
-        if state_key not in st.session_state:
-            st.session_state[state_key] = 0
-
-        current_step = st.session_state[state_key]
-        total_steps = len(pasos)
-        rating = chains[chain_id][0]["chain_rating"]
-
-        with st.container(border=True):
-            col1, col2, col3, _ = st.columns([4, 3, 1, 7])
-
-            with col1:
-                st.subheader(f"Cadena d'intercanvi #{chain_id}")
-
-            with col2:
-                cols = st.columns(5, gap="xxsmall")
-                for i, col in enumerate(cols, start=1):
-                    star_img = get_star_image(i, rating)
-                    #img_original = Image.open(star_img)
-                    #img_recortada = ImageOps.fit(
-                    #    img_original, (star_size, star_size)
-                    #)
-
-                    with col:
-                        #st.image(img_recortada)
-                        renderizar_imagen(star_img, "img_sistema", (star_size, star_size), "normal", False)
-
-            with col3:
-                st.subheader(rating)
-
-            col_progress, col_btn = st.columns([4, 1])
-
-            with col_progress:
-                porcentaje_progreso = (current_step / (total_steps - 1)) * 100
-                ancho_telon = 100 - porcentaje_progreso
-
-                segmentos_html = ""
-                for i in range(total_steps - 1):
-                    color_segmento = (
-                        "#24b653"
-                        if pasos[i]["status"] == "accepted"
-                        else "#FF9F4B"
-                    )
-                    segmentos_html += f'<div class="progress-segment" style="background-color: {color_segmento};"></div>'
-
-                nodos_html = ""
-                for i in range(total_steps):
-                    status_nodo = pasos[i]["status"]
-                    clase_activa = "active" if i <= current_step else ""
-                    clase_viendo = "viendo" if i == current_step else ""
-                    clase_mine = "is-mine" if pasos[i].get("is_mine") else ""
-                    nodos_html += f'<div class="step-node {clase_activa} {status_nodo} {clase_viendo} {clase_mine}">{i+1}</div>'
-
-                html_code = f"""
-                <style>
-                .stepper-container {{ position: relative; display: flex; justify-content: space-between; align-items: center; width: 90%; padding: 30px 15px 10px 15px; margin-bottom: 20px; box-sizing: border-box; }}
-                .stepper-color-track {{ position: absolute; left: 12px; right: 12px; height: 4px; display: flex; z-index: 1; }}
-                .progress-segment {{ flex-grow: 1; height: 100%; }}
-                .stepper-curtain {{ position: absolute; right: 0; top: 0; bottom: 0; background-color: #E0E0E0; transition: width 0.4s ease-in-out; z-index: 2; }}
-                .step-node {{ position: relative; width: 24px; height: 24px; border-radius: 50%; background-color: #E0E0E0; color: #888888; font-size: 13px; font-weight: bold; display: flex; justify-content: center !important; align-items: center !important; z-index: 3; box-shadow: 0 0 0 6px white; transition: all 0.3s ease-in-out; }}
-                .step-node.is-mine::after {{ content: "Tu"; position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 800; color: #0A0C10; white-space: nowrap; }}
-                .step-node.active {{ background-color: #FF9F4B; color: white; }}
-                .step-node.accepted {{ background-color: #24b653 !important; color: white !important; }}
-                .step-node.declined {{ background-color: #FF9F4B !important; color: white !important; }}
-                .step-node.viendo {{ transform: scale(1.1); box-shadow: 0 0 0 3px white, 0 0 0 6px #000000 !important; z-index: 4; }}
-                </style>
-
-                <div class="stepper-container">
-                    <div class="stepper-color-track">
-                        {segmentos_html}
-                        <div class="stepper-curtain" style="width: {ancho_telon}%;"></div>
-                    </div>
-                    {nodos_html}
-                </div>
-                """
-                st.markdown(html_code, unsafe_allow_html=True)
-                st.write("")
-
-            with col_btn:
-                if item_status == "neutral" and chain_status == "pending":
-                    if st.button(
-                        "Acceptar cadena",
-                        key=f"ok_{chain_id}",
-                        use_container_width=True,
-                    ):
-                        confirm("acceptar", item_id, chain_id)
-                    if st.button(
-                        "Rebutjar cadena",
-                        key=f"ko_{chain_id}",
-                        use_container_width=True,
-                    ):
-                        confirm("rebutjar", item_id, chain_id)
-
-                elif item_status == "accepted" and chain_status == "pending":
-                    if st.button(
-                        "Sortir de la cadena",
-                        key=f"btn_leave_{chain_id}",
-                        use_container_width=True,
-                    ):
-                        confirm("sortir de", item_id, chain_id)
-                    if st.button(
-                        "Rebutjar cadena",
-                        key=f"btn_reject_acc_{chain_id}",
-                        use_container_width=True,
-                    ):
-                        confirm("rebutjar", item_id, chain_id)
-
-            item = get_item_from_item_id(pasos[current_step]["item_id"])
-
-            (
-                col_btn_previous,
-                col_image,
-                col_info,
-                col_btn_next,
-            ) = st.columns([1, 6, 6, 1], gap="medium")
-
-            st.markdown(
-                """
-                <style>
-                div[class*="st-key-prev_"] button,
-                div[class*="st-key-next_"] button {
-                    height: 300px !important;
-                    background-color: #F0F2F6 !important;
-                    color: #555555 !important;
-                    border: none !important;
-                    border-radius: 8px !important;
-                    transition: all 0.3s ease !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    line-height: 1 !important;
-                }
-                div[class*="st-key-prev_"] button *,
-                div[class*="st-key-next_"] button * {
-                    font-size: 35px !important;
-                    line-height: 1 !important;
-                    display: block !important;
-                }
-                div[class*="st-key-prev_"] button:hover,
-                div[class*="st-key-next_"] button:hover {
-                    background-color: #D2D8E4 !important;
-                    color: #FF4B4B !important;
-                }
-                </style>
-            """,
-                unsafe_allow_html=True,
-            )
-
-            with col_btn_previous:
-                st.button(
-                    "❮",
-                    key=f"prev_{chain_id}",
-                    use_container_width=True,
-                    on_click=prev_step,
-                    args=(state_key, current_step, total_steps),
-                )
-
-            with col_image:
-                img_src = item.get("image_optimized") or item.get("image")
-                """
-                if img_src:
-                    # Descarga de la URL pública de Supabase
-                    img_original = (
-                        Image.open(io.BytesIO(requests.get(img_src).content))
-                        if str(img_src).startswith("http")
-                        else Image.open(img_src)
-                    )
-                    img_recortada = ImageOps.fit(img_original, (500, 200))
-                    st.image(img_recortada, use_container_width=True)
-                """
-                renderizar_imagen(item.get("image_optimized"), "img_opt", (500, 200), "normal", False)
-
-                if st.button(
-                    "Ampliar imatge",
-                    icon=":material/zoom_in:",
-                    key=f"{chain_id}_{item['item_id']}",
-                    use_container_width=True,
-                ):
-                    ampliar_imagen(item["image"], item)
-
-            with col_info:
-                user = get_user_by_username(item["user"])
-                st.write(
-                    f"**Usuari:** {item['user']} :grey[★ ({user['rating']})]"
-                )
-                st.write(f"**Ofereix:** {item['have']}")
-                st.write(f"**Vol aconseguir:** {item['want']}")
-
-                if pasos[current_step]["status"] == "neutral":
-                    st.write(
-                        "**Què li sembla l'intercanvi?** :orange[Esperant resposta]"
-                    )
-                elif pasos[current_step]["status"] == "accepted":
-                    st.write(
-                        "**Què li sembla l'intercanvi?** :green[Accepta l'intercanvi]"
-                    )
-
-                with st.expander("Veure descripció de l'article"):
-                    st.write(f"**Descripció:** {item['description']}")
-
-            with col_btn_next:
-                st.button(
-                    "❯",
-                    icon_position="right",
-                    key=f"next_{chain_id}",
-                    use_container_width=True,
-                    on_click=next_step,
-                    args=(state_key, current_step, total_steps),
-                )
-
+        render_chain_card(chain_id, pasos, item_status, chain_status, star_size)
 
 def render_chains():
     st.button(
