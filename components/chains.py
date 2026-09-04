@@ -131,7 +131,7 @@ def ampliar_imagen(ruta_imagen, item):
     )
     st.image(img_original, use_container_width=True)
     """
-    renderizar_imagen(item["image"], img, (275, 200), "normal", False)
+    renderizar_imagen(item["image"], "img", (275, 200), "normal", False)
 
 
 def chain_detail(item_id, chain_status, item_status, tab):
@@ -262,13 +262,14 @@ def chain_detail(item_id, chain_status, item_status, tab):
                 cols = st.columns(5, gap="xxsmall")
                 for i, col in enumerate(cols, start=1):
                     star_img = get_star_image(i, rating)
-                    img_original = Image.open(star_img)
-                    img_recortada = ImageOps.fit(
-                        img_original, (star_size, star_size)
-                    )
+                    #img_original = Image.open(star_img)
+                    #img_recortada = ImageOps.fit(
+                    #    img_original, (star_size, star_size)
+                    #)
 
                     with col:
-                        st.image(img_recortada)
+                        #st.image(img_recortada)
+                        renderizar_imagen(star_img, "img_sistema", (star_size, star_size), "normal", False)
 
             with col3:
                 st.subheader(rating)
@@ -402,6 +403,7 @@ def chain_detail(item_id, chain_status, item_status, tab):
 
             with col_image:
                 img_src = item.get("image_optimized") or item.get("image")
+                """
                 if img_src:
                     # Descarga de la URL pública de Supabase
                     img_original = (
@@ -411,6 +413,8 @@ def chain_detail(item_id, chain_status, item_status, tab):
                     )
                     img_recortada = ImageOps.fit(img_original, (500, 200))
                     st.image(img_recortada, use_container_width=True)
+                """
+                renderizar_imagen(item.get("image_optimized"), "img_opt", (500, 200), "normal", False)
 
                 if st.button(
                     "Ampliar imatge",
