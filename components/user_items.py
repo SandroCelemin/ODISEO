@@ -32,9 +32,11 @@ def open_image(path):
 
 @st.dialog("Vista completa de l'article", width="medium", icon=":material/visibility:")
 def ampliar_imagen(item):
-    
+    """
     url = get_image_url("img", item["image"])
     st.image(url, use_container_width=True)
+    """
+    renderizar_imagen(item["image"], "img", (275, 200), "normal", False)
     #st.caption("Utilitza les fletxes de la cantonada superior dreta si vols veure-la encara més gran.")
 
 def render_user_items():
@@ -105,9 +107,12 @@ def render_user_items():
                         #img_recortada = ImageOps.fit(img_original, (275, 200)) # ImageOps.fit s'encarrega que no es deformi la foto en retallar-la
                         
                         
-                        
+                        """
                         url = get_image_url("img_opt", item["image_optimized"])
                         st.image(url, use_container_width=True)
+                        """
+                        renderizar_imagen(item["image_optimized"], "img_opt", (275, 200), "normal", False)
+
                             
                         if st.button("Ampliar imatge", icon=":material/zoom_in:", key=item["item_id"], use_container_width=True):
                             # Cridem la funció del diàleg passant-li la ruta original
