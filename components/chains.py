@@ -135,8 +135,8 @@ def ampliar_imagen(ruta_imagen, item):
 
 # FRAGMENTO INDIVIDUAL DE CADA CADENA PARA OPTIMIZACION
 @st.fragment
-def render_chain_card(chain_id, pasos, item_status, chain_status, star_size):
-    
+def render_chain_card(chain_id, pasos, item_status, chain_status, star_size=20):
+    # CSS inyectado específico para este fragmento
     st.markdown(
         """
         <style>
@@ -152,6 +152,30 @@ def render_chain_card(chain_id, pasos, item_status, chain_status, star_size):
         div[class*="st-key-confirm"] button:hover {
             background-color: #2C3649 !important;
             color: white !important;
+        }
+        div[class*="st-key-prev_"] button,
+        div[class*="st-key-next_"] button {
+            height: 300px !important;
+            background-color: #F0F2F6 !important;
+            color: #555555 !important;
+            border: none !important;
+            border-radius: 8px !important;
+            transition: all 0.3s ease !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            line-height: 1 !important;
+        }
+        div[class*="st-key-prev_"] button *,
+        div[class*="st-key-next_"] button * {
+            font-size: 35px !important;
+            line-height: 1 !important;
+            display: block !important;
+        }
+        div[class*="st-key-prev_"] button:hover,
+        div[class*="st-key-next_"] button:hover {
+            background-color: #D2D8E4 !important;
+            color: #FF4B4B !important;
         }
         </style>
     """,
@@ -176,13 +200,7 @@ def render_chain_card(chain_id, pasos, item_status, chain_status, star_size):
             cols = st.columns(5, gap="xxsmall")
             for i, col in enumerate(cols, start=1):
                 star_img = get_star_image(i, rating)
-                #img_original = Image.open(star_img)
-                #img_recortada = ImageOps.fit(
-                #    img_original, (star_size, star_size)
-                #)
-
                 with col:
-                    #st.image(img_recortada)
                     renderizar_imagen(star_img, "img_sistema", (star_size, star_size), "normal", False)
 
         with col3:
@@ -238,31 +256,15 @@ def render_chain_card(chain_id, pasos, item_status, chain_status, star_size):
 
         with col_btn:
             if item_status == "neutral" and chain_status == "pending":
-                if st.button(
-                    "Acceptar cadena",
-                    key=f"ok_{chain_id}",
-                    use_container_width=True,
-                ):
+                if st.button("Acceptar cadena", key=f"ok_{chain_id}", use_container_width=True):
                     confirm("acceptar", item_id, chain_id)
-                if st.button(
-                    "Rebutjar cadena",
-                    key=f"ko_{chain_id}",
-                    use_container_width=True,
-                ):
+                if st.button("Rebutjar cadena", key=f"ko_{chain_id}", use_container_width=True):
                     confirm("rebutjar", item_id, chain_id)
 
             elif item_status == "accepted" and chain_status == "pending":
-                if st.button(
-                    "Sortir de la cadena",
-                    key=f"btn_leave_{chain_id}",
-                    use_container_width=True,
-                ):
+                if st.button("Sortir de la cadena", key=f"btn_leave_{chain_id}", use_container_width=True):
                     confirm("sortir de", item_id, chain_id)
-                if st.button(
-                    "Rebutjar cadena",
-                    key=f"btn_reject_acc_{chain_id}",
-                    use_container_width=True,
-                ):
+                if st.button("Rebutjar cadena", key=f"btn_reject_acc_{chain_id}", use_container_width=True):
                     confirm("rebutjar", item_id, chain_id)
 
         item = get_item_from_item_id(pasos[current_step]["item_id"])
@@ -274,38 +276,6 @@ def render_chain_card(chain_id, pasos, item_status, chain_status, star_size):
             col_btn_next,
         ) = st.columns([1, 6, 6, 1], gap="medium")
 
-        st.markdown(
-            """
-            <style>
-            div[class*="st-key-prev_"] button,
-            div[class*="st-key-next_"] button {
-                height: 300px !important;
-                background-color: #F0F2F6 !important;
-                color: #555555 !important;
-                border: none !important;
-                border-radius: 8px !important;
-                transition: all 0.3s ease !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                line-height: 1 !important;
-            }
-            div[class*="st-key-prev_"] button *,
-            div[class*="st-key-next_"] button * {
-                font-size: 35px !important;
-                line-height: 1 !important;
-                display: block !important;
-            }
-            div[class*="st-key-prev_"] button:hover,
-            div[class*="st-key-next_"] button:hover {
-                background-color: #D2D8E4 !important;
-                color: #FF4B4B !important;
-            }
-            </style>
-        """,
-            unsafe_allow_html=True,
-        )
-
         with col_btn_previous:
             st.button(
                 "❮",
@@ -316,18 +286,6 @@ def render_chain_card(chain_id, pasos, item_status, chain_status, star_size):
             )
 
         with col_image:
-            img_src = item.get("image_optimized") or item.get("image")
-            """
-            if img_src:
-                # Descarga de la URL pública de Supabase
-                img_original = (
-                    Image.open(io.BytesIO(requests.get(img_src).content))
-                    if str(img_src).startswith("http")
-                    else Image.open(img_src)
-                )
-                img_recortada = ImageOps.fit(img_original, (500, 200))
-                st.image(img_recortada, use_container_width=True)
-            """
             renderizar_imagen(item.get("image_optimized"), "img_opt", (500, 200), "normal", False)
 
             if st.button(
@@ -340,20 +298,14 @@ def render_chain_card(chain_id, pasos, item_status, chain_status, star_size):
 
         with col_info:
             user = get_user_by_username(item["user"])
-            st.write(
-                f"**Usuari:** {item['user']} :grey[★ ({user['rating']})]"
-            )
+            st.write(f"**Usuari:** {item['user']} :grey[★ ({user['rating']})]")
             st.write(f"**Ofereix:** {item['have']}")
             st.write(f"**Vol aconseguir:** {item['want']}")
 
             if pasos[current_step]["status"] == "neutral":
-                st.write(
-                    "**Què li sembla l'intercanvi?** :orange[Esperant resposta]"
-                )
+                st.write("**Què li sembla l'intercanvi?** :orange[Esperant resposta]")
             elif pasos[current_step]["status"] == "accepted":
-                st.write(
-                    "**Què li sembla l'intercanvi?** :green[Accepta l'intercanvi]"
-                )
+                st.write("**Què li sembla l'intercanvi?** :green[Accepta l'intercanvi]")
 
             with st.expander("Veure descripció de l'article"):
                 st.write(f"**Descripció:** {item['description']}")
@@ -367,7 +319,7 @@ def render_chain_card(chain_id, pasos, item_status, chain_status, star_size):
                 on_click=next_step,
                 args=(state_key, current_step, total_steps),
             )
-
+            
 def chain_detail(item_id, chain_status, item_status, tab):
     conn = get_conn()
     c = conn.cursor()
