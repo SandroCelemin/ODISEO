@@ -6,7 +6,7 @@ import streamlit as st
 from engine import get_items_from_have_chains
 from db import delete_item, get_items_from_user, get_reserved_items, get_user_by_username
 from services.search import first_distance_items
-from services.utils import renderizar_imagen, #get_pil_image
+from services.utils import renderizar_imagen #get_pil_image
 
 from PIL import Image, ImageOps, ImageEnhance, ImageDraw, ImageFont
 
