@@ -158,19 +158,8 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
                     
                     #if img is not None:
                     if locked_or_reserved:
-                        """
-                        enhancer = ImageEnhance.Color(img)
-                        img = enhancer.enhance(0.5)
-                        img = desvanecer_imagen(img, 0.5)
-                        img = agregar_insignia_reservado(img)
-                        """
                         renderizar_imagen(item.get("image_optimized"), "img_opt", (None, None), "normal", True, False)
-                    """
-                    else:
-                        img = obtener_imagen_item(path, locked_or_reserved)
-                    """
-                    #st.image(img, use_container_width=True)
-                    
+
                     else:
                         renderizar_imagen(item.get("image_optimized"), "img_opt", (None, None), "normal", False, False)
 
@@ -199,8 +188,6 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
             key="load_more_items", 
             on_click=show_more
         )
-
-
 
 def render_marketplace(items, mode): #mode pot ser "suggestions" (per a create_item) o "main" (per a la marketplace)
 
