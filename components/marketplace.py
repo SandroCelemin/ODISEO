@@ -156,7 +156,7 @@ def render_batch(batch_items, num_columnas):
                 user_rating = item.get("rating")
                 
                 st.subheader(f"**{item['have']}**")
-                st.write(f":grey[{user_rating}] ★ {user_rating}")
+                st.write(f":grey[{item["user"]}] ★ {user_rating}")
                 
                 # ───── BOTÓ VEURE ─────
                 if st.button("Veure", key=f"detail_{item['item_id']}", use_container_width=True):
