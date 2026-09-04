@@ -8,7 +8,7 @@ from PIL import Image, ImageOps, ImageDraw
 
 from engine import find_all_chains, get_items_from_have_chains
 from db import is_item_accepted_in_any_chain, get_user_by_username, calculate_chain_rating
-from services.utils import similarity, get_image_url, get_pil_image
+from services.utils import similarity, get_image_url, get_pil_image, renderizar_imagen
 from components.digraph import *
 
 st.set_page_config(layout="wide")
@@ -45,6 +45,11 @@ def make_circle_image(img_input: Image.Image | str, size=(200, 200), bucket: str
     img.putalpha(mask)
     return img
 
+"""
+@st.cache_data(show_spinner=False)
+def open_image(path):
+    return Image.open(path).convert("RGB")
+"""
 def get_star_image(position, score):
     diff = float(score) - (position - 1)
     if diff >= 0.75:
@@ -60,11 +65,14 @@ def get_star_image(position, score):
 # ==========================================
 @st.dialog("Vista completa de l'article", width="medium", icon=":material/visibility:")
 def ampliar_imagen(ruta_o_key, bucket: str = "img"):
+    """
     img_original = get_pil_image(ruta_o_key, bucket)
     if img_original:
         st.image(img_original, use_container_width=True)
     else:
         st.error("No s'ha pogut carregar la imatge.")
+    """
+    renderizar_imagen(ruta_o_key, bucket, (275, 200), "normal", False, False)
         
 def see_cycle(chain):
     st.session_state.camino_resaltado = chain
@@ -175,16 +183,21 @@ def show_rute(item_dict):
             
             if current_step < num_items_chain:
                 #img_final = ImageOps.fit(img_original, (500, 200))
+                """
                 img_opt_PIL = get_pil_image(current_item["image_optimized"], "img_opt")
                 img_final = load_and_crop_image(img_opt_PIL, (500, 200), "img_opt")
                 st.image(img_final, use_container_width=True)
+                """
+                renderizar_imagen(current_item["image_optimized"], "img_opt", (500, 200), "normal", False, True)
+
             else:
-                img_final = make_circle_image(current_item["image"], size=(300, 300))
+                #img_final = make_circle_image(current_item["image"], size=(300, 300))
                 
                 _, col_center, _ = st.columns([1,2.3,1])
             
                 with col_center:
-                    st.image(img_final, use_container_width=True)
+                    #st.image(img_final, use_container_width=True)
+                    renderizar_imagen(current_item["image"], "imagenes_users", (300, 300), "circular", False, True)
         
         if current_step < num_items_chain:
             if st.button("Ampliar imatge", icon=":material/zoom_in:", key=f"zoom_{chain_id}_{current_item['item_id']}", use_container_width=True):
@@ -325,8 +338,11 @@ def render_detail(items):
         img_recortada = load_and_crop_image(item["image"], (650, height - 20))
         st.image(img_recortada, use_container_width=True)
         """
+        """
         img_opt_PIL = get_pil_image(item["image_optimized"], "img_opt")
         st.image(img_opt_PIL, use_container_width=True)
+        """
+        renderizar_imagen(item["image_optimized"], "img_opt", (300, 300), "normal", False, True)
         
         if st.button("Ampliar imatge", icon=":material/zoom_in:", use_container_width=True):
             # Cridem la funció del diàleg passant-li la ruta original
@@ -360,12 +376,15 @@ def render_detail(items):
                 
                 #img_original = Image.open(img_path)
                 #img_circular = make_circle_image(img_original, size=(height-height_first_container, height-height_first_container))
+                """
                 img_user_PIL = get_pil_image(owner_user["user_image"], "imagenes_users")
                 img_circular = make_circle_image(
                     img_user_PIL, 
                     size=(height - height_first_container, height - height_first_container)
                 )
                 st.image(img_circular)
+                """
+                renderizar_imagen(owner_user["user_image"], "imagenes_users", (height - height_first_container, height - height_first_container), "circular", False, True)
 
             with col_user:
                 col_user_name, col_user_btn = st.columns(2)
@@ -383,11 +402,14 @@ def render_detail(items):
                             
                             #img_original = Image.open(star_img)
                             #img_recortada = ImageOps.fit(img_original, (star_size, star_size)) # ImageOps.fit s'encarrega que no es deformi la foto en retallar-la
+                            """
                             img_star_PIL = get_pil_image(star_img, "img_sistema")
                             img_recortada = load_and_crop_image(img_star_PIL, (star_size, star_size), "img_sistema")
+                            """
                             
                             with col:
-                                st.image(img_recortada)
+                                #st.image(img_recortada)
+                                renderizar_imagen(star_img, "img_sistema", (star_size, star_size), "normal", False, True)
                                 
                     with col2:
                         st.subheader(owner_user["rating"])
