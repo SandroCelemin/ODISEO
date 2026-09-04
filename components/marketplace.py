@@ -150,9 +150,9 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
                 # ───── IMATGE ─────
                 #st.write(item)
                 #path, optimized = ((item["image_optimized"], True) if item["image_optimized"] else (item["image"], False))
-                path = item.get("image_optimized") or item.get("image")
+                #path = item.get("image_optimized") or item.get("image")
                 
-                if path:
+                if item.get("image_optimized"):
                     # Convierte la ruta de Supabase en un objeto PIL listo para manipular
                     #img = get_pil_image(path, bucket_name="img_opt")
                     
@@ -164,10 +164,17 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
                         renderizar_imagen(item.get("image_optimized"), "img_opt", (None, None), "normal", False, False)
 
                 # ───── TEXT ─────
+                """
                 user = get_user_by_username(item["user"])
                 
                 st.subheader(f"**{item['have']}**")
                 st.write(f":grey[{user['username']}] ★ {user['rating']}")
+                """
+                
+                user_rating = item["rating"]
+                
+                st.subheader(f"**{item['have']}**")
+                st.write(f":grey[{user_rating}] ★ {user_rating}")
                 
                 # ───── BOTÓ VEURE ─────
                 if st.button("Veure", key=f"detail_{item['item_id']}", use_container_width=True):
