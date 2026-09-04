@@ -1,5 +1,5 @@
 import streamlit as st
-from utils import get_image_url
+from services.utils import get_image_url
 #import base64
 #import os
 
