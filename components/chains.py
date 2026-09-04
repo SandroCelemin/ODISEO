@@ -131,7 +131,7 @@ def ampliar_imagen(ruta_imagen, item):
     )
     st.image(img_original, use_container_width=True)
     """
-    renderizar_imagen(item["image"], "img", (275, 200), "normal", False)
+    renderizar_imagen(item["image"], "img", (275, 200), "normal", False, False)
 
 # FRAGMENTO INDIVIDUAL DE CADA CADENA PARA OPTIMIZACION
 @st.fragment
@@ -183,7 +183,7 @@ def render_chain_card(chain_id, item_id, pasos, item_status, chain_status, star_
 
                 with col:
                     #st.image(img_recortada)
-                    renderizar_imagen(star_img, "img_sistema", (star_size, star_size), "normal", False)
+                    renderizar_imagen(star_img, "img_sistema", (star_size, star_size), "normal", False, True)
 
         with col3:
             st.subheader(rating)
@@ -328,7 +328,7 @@ def render_chain_card(chain_id, item_id, pasos, item_status, chain_status, star_
                 img_recortada = ImageOps.fit(img_original, (500, 200))
                 st.image(img_recortada, use_container_width=True)
             """
-            renderizar_imagen(item.get("image_optimized"), "img_opt", (500, 200), "normal", False)
+            renderizar_imagen(item.get("image_optimized"), "img_opt", (500, 200), "normal", False, True)
 
             if st.button(
                 "Ampliar imatge",
