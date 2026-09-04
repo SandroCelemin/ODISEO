@@ -111,7 +111,7 @@ def agregar_insignia_reservado(img: Image.Image) -> Image.Image:
     
     ancho, alto = img.size
     margen = 10
-    ancho_badge = 300  # Corregido (antes 4000)
+    ancho_badge = 300
     alto_badge = 60
     
     x1 = ancho - ancho_badge - margen
@@ -125,13 +125,17 @@ def agregar_insignia_reservado(img: Image.Image) -> Image.Image:
         font = ImageFont.load_default()
     
     # Fondo naranja con esquinas redondeadas
-    draw.rounded_rectangle([x1, y1, x2, y2], radius=4, fill=(230, 81, 0, 230))
+    draw.rounded_rectangle([x1, y1, x2, y2], radius=8, fill=(230, 81, 0, 230))
     
-    # Texto 'RESERVAT' (las coordenadas se ajustan al nuevo badge)
-    draw.text((x1 + 18, y1 + 5), "RESERVAT", fill=(255, 255, 255, 255), font=font)
+    # Cálculo del punto central del recuadro
+    centro_x = (x1 + x2) / 2
+    centro_y = (y1 + y2) / 2
+    
+    # Texto 'RESERVAT' alineado al centro exacto
+    draw.text((centro_x, centro_y), "RESERVAT", fill=(255, 255, 255, 255), font=font, anchor="mm")
         
     return Image.alpha_composite(img, overlay)
-
+    
 def renderizar_imagen(
     file_name: str, 
     bucket_name: str = None, 
