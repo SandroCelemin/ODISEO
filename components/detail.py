@@ -7,7 +7,7 @@ import streamlit as st
 from PIL import Image, ImageOps, ImageDraw
 
 from engine import find_all_chains, get_items_from_have_chains
-from db import is_item_accepted_in_any_chain, get_user_by_username, calculate_chain_rating
+from db import is_item_accepted_in_any_chain, get_user_by_username, calculate_chains_ratings_batch
 from services.utils import similarity, get_image_url, get_pil_image, renderizar_imagen
 from components.digraph import *
 
@@ -89,7 +89,7 @@ def go_create_callback(registro_have, registro_want):
     else:
         st.session_state.show_login = True
 
-@st.fragment
+#@st.fragment
 def show_rute(item_dict):
     
     chain_raw = st.session_state.camino_resaltado
@@ -122,13 +122,13 @@ def show_rute(item_dict):
             user_img = user_data["user_image"]
             username = f"{st.session_state.user} (Tu)"
         else:
-            user_img = "imagenes_users/default_profile_image.png"
+            user_img = "default_profile_image.png"
             username = "Tu"
         #user_raw_img = user_data["user_image"]
         
         current_item = {
-            "item_id": "lore_ipsum",
-            "user": f"{st.session_state.user} (Tu)",
+            "item_id": None,
+            "user": username,
             "have": first_item["want"],
             "image": user_img,
             "want": last_item["have"],
@@ -222,7 +222,7 @@ def show_rute(item_dict):
             st.session_state.route_current_step = (current_step + 1) % total_steps
             st.rerun(scope="fragment")
 
-def chains_container(chains_raw, item_dict):
+def chains_container(chains_raw, item_dict, ratings_dict):
     """Renderitza la llista de cadenes d'intercanvi."""
     with st.container(height=height_chain_container):
     
@@ -233,13 +233,11 @@ def chains_container(chains_raw, item_dict):
         for chain_raw in chains_raw:
             
             chain = list(reversed(chain_raw)) # En el flux correcte [X --> X -->...]
-            
             last_item = item_dict[chain[-1]]
             first_item = item_dict[chain[0]]
-            # Utilitzem una clau única combinant els IDs de la cadena perquè Streamlit no es confongui
-            button_key = f"{'_'.join(chain)}"
+            button_key = f"{'_'.join(chain)}" # Utilitzem una clau única combinant els IDs de la cadena perquè Streamlit no es confongui de botó
             
-            chain_rating = calculate_chain_rating(chain, True)
+            chain_rating = ratings_dict.get(tuple(chain_raw), 5.0)
             
             st.markdown(f"**DISTÀNCIA {int(len(chain)+1)}** ★ ({chain_rating})")
 
@@ -280,6 +278,68 @@ def chains_container(chains_raw, item_dict):
                     st.session_state.show_create = True
                     st.rerun()
                 """
+
+@st.fragment
+def render_bottom_part(item_dict, chains, ratings_dict):
+    
+    chains_according_to_search = []
+    other_chains = []
+    digraph_items = []
+    stored_ids = set()
+
+    col_chains, col_graph = st.columns(2)
+    
+    with col_chains:
+        
+        # Si es busca per tinc
+        if st.session_state.search_text_mode == "have" and st.session_state.search_text != "":
+            
+            height_graph_container = height_chain_container*2+105
+            
+            for chain in chains:
+                
+                registro = item_dict[chain[-1]] # Item al qual tu li dones
+
+                if similarity(st.session_state.search_text, registro['want']) >= 0.6:
+                    chains_according_to_search.append(chain)
+                else:
+                    other_chains.append(chain)
+            
+                for item_id in chain:
+                    if item_id not in stored_ids:
+                        digraph_items.append(item_dict[item_id])
+                        stored_ids.add(item_id)
+            
+            st.markdown(f"##### :material/conversion_path: Com aconseguir aquest item amb {st.session_state.search_text}")
+            chains_container(chains_according_to_search, item_dict, ratings_dict)
+            
+            st.html("<br>")
+            
+            st.markdown("##### :material/conversion_path: Altres formes d'aconseguir aquest item")
+            chains_container(other_chains, item_dict, ratings_dict)
+            
+        # Si es busca per vull
+        else:
+            height_graph_container = height_chain_container
+            
+            for chain in chains:
+                for item_id in chain:
+                    if item_id not in stored_ids:
+                        digraph_items.append(item_dict[item_id])
+                        stored_ids.add(item_id)
+            
+            st.markdown("##### :material/conversion_path: Com aconseguir aquest item")
+            chains_container(chains, item_dict, ratings_dict)
+
+    with col_graph:
+        st.html("<br>")
+        with st.spinner("Carregant la visualització de la xarxa..."):
+            render_digraph_detail(digraph_items, height_graph_container, st.session_state.camino_resaltado)
+    
+    st.html("<br>")
+    
+    if st.session_state.camino_resaltado:
+        show_rute(item_dict)
 
 
 # ==========================================
@@ -421,69 +481,12 @@ def render_detail(items):
                         st.rerun()
 
     st.html("<br>")
-
+    
     # Càlcul de Cadenes
     chains = find_all_chains("bfs_modified", "want", items, item["item_id"]) # és una llista d'ids
-    #digraph_items = get_items_from_have_chains(items, item["want"], "want")
 
-    chains_according_to_search = []
-    other_chains = []
-
-    col_chains, col_graph = st.columns(2)
+    # Càlcul de la puntuació de cada cadena amb l'identificador dels seus ids
+    ratings_dict = calculate_chains_ratings_batch(chains, True)
     
-    with col_chains:
-        
-        digraph_items = []
-        stored_ids = set()
-        
-        # Si es busca per tinc
-        if st.session_state.search_text_mode == "have" and st.session_state.search_text != "":
-            
-            #chains_according_to_search = []
-            height_graph_container = height_chain_container*2+105
-            
-            for chain in chains:
-                
-                registro = item_dict[chain[-1]] # Item al qual tu li dones
-
-                if similarity(st.session_state.search_text, registro['want']) >= 0.6:
-                    chains_according_to_search.append(chain)
-                else:
-                    other_chains.append(chain)
-            
-                for item_id in chain:
-                    if item_id not in stored_ids:
-                        digraph_items.append(item_dict[item_id])
-                        stored_ids.add(item_id)
-            
-            st.markdown(f"##### :material/conversion_path: Com aconseguir aquest item amb {st.session_state.search_text}")
-            chains_container(chains_according_to_search, item_dict)
-            
-            st.html("<br>")
-            
-            st.markdown("##### :material/conversion_path: Altres formes d'aconseguir aquest item")
-            chains_container(other_chains, item_dict)
-            
-        # Si es busca per vull
-        else:
-            height_graph_container = height_chain_container
-            
-            for chain in chains:
-                for item_id in chain:
-                    if item_id not in stored_ids:
-                        digraph_items.append(item_dict[item_id])
-                        stored_ids.add(item_id)
-            
-            st.markdown("##### :material/conversion_path: Com aconseguir aquest item")
-            chains_container(chains, item_dict)
-
-    with col_graph:
-        st.html("<br>")
-        with st.spinner("Carregant la visualització de la xarxa..."):
-            render_digraph_detail(digraph_items, height_graph_container, st.session_state.camino_resaltado)
-
-    #st.write(st.session_state.camino_resaltado)
-    st.html("<br>")
-    
-    if st.session_state.camino_resaltado:
-        show_rute(item_dict)
+    # Càrrega de la part inferior en un st.fragment per optimització
+    render_bottom_part(item_dict, chains, ratings_dict)
