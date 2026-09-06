@@ -38,7 +38,7 @@ def init_db():
     c.execute("""
     CREATE TABLE IF NOT EXISTS items (
         item_id VARCHAR PRIMARY KEY,
-        "user" VARCHAR,
+        user VARCHAR,
         have VARCHAR,
         description TEXT,
         image TEXT,
@@ -73,7 +73,7 @@ def init_db():
     c.execute("""
     CREATE TABLE IF NOT EXISTS notifications (
         notification_id SERIAL PRIMARY KEY,
-        "user" VARCHAR,
+        user VARCHAR,
         item_id VARCHAR,
         message TEXT,
         is_read INTEGER DEFAULT 0,  -- 0 = No leída, 1 = Notificada como toast, 2 = Vista
@@ -523,6 +523,71 @@ def calculate_chain_rating(item_ids, hypothetical):
     finally:
         c.close()
         conn.close()
+
+def calculate_chains_ratings_batch(chains_list, hypothetical=True):
+    """
+    Calcula la puntuación de múltiples cadenas en 1 sola consulta SQL.
+    Recibe una lista de cadenas: [[id1, id2], [id3, id4], ...]
+    Devuelve un diccionario: { (id1, id2): 4.8, (id3, id4): 4.2 }
+    """
+    if not chains_list:
+        return {}
+
+    # 1. Recopilar todos los item_ids únicos entre todas las cadenas
+    all_unique_ids = list({item_id for chain in chains_list for item_id in chain})
+
+    item_ratings = {}
+    if all_unique_ids:
+        conn = get_conn()
+        c = conn.cursor()
+        try:
+            placeholders = ','.join('%s' for _ in all_unique_ids)
+            c.execute(f"""
+                SELECT i.item_id, u.rating 
+                FROM items i 
+                JOIN users u ON i.user = u.username 
+                WHERE i.item_id IN ({placeholders});
+            """, tuple(all_unique_ids))
+            
+            for item_id, rating in c.fetchall():
+                item_ratings[item_id] = float(rating) if rating is not None else 5.0
+        except Exception as e:
+            print(f"Error al obtener ratings masivos: {e}")
+        finally:
+            c.close()
+            conn.close()
+
+    # ================
+    # CALCUL PUNTUACIO
+    # ================
+    user_rating = st.session_state.get("user_rating", 5.0)
+    k = 1
+    x0 = 6
+    results = {}
+
+    for chain in chains_list:
+        chain_key = tuple(chain)  # Se usa tupla como clave por ser inmutable
+        if not chain:
+            results[chain_key] = 5.0
+            continue
+
+        ratings_list = [item_ratings.get(i_id, 5.0) for i_id in chain]
+        avg_items_rating = sum(ratings_list) / len(ratings_list)
+
+        aux_chain_len = len(chain)
+        
+        if hypothetical:
+            avg_items_rating = (avg_items_rating * aux_chain_len + user_rating) / (aux_chain_len + 1)
+            chain_length = aux_chain_len + 1
+        else:
+            chain_length = aux_chain_len
+
+        length_score = 5.0 / (1.0 + math.exp(k * (chain_length - x0)))
+        rating = round((0.60 * length_score) + (0.40 * float(avg_items_rating)), 1)
+        
+        results[chain_key] = rating
+
+    return results
 
 def add_chains(item_ids):
     if not item_ids:
