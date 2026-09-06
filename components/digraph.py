@@ -161,8 +161,8 @@ def render_digraph_detail(items, height_container, camino):
             else:
                 node_color = "#E0E0E0"
                 
-        raw_img = item.get("image") or item.get("image_url")
-        imagen_procesada = obtener_imagen_base64(raw_img, bucket="items")
+        raw_img = item.get("image_optimized", "image_not_found")
+        imagen_procesada = obtener_imagen_base64(raw_img, bucket="img_opt")
 
         if imagen_procesada:
             node = Node(
@@ -186,12 +186,13 @@ def render_digraph_detail(items, height_container, camino):
 
     # Node de l'usuari actual
     if camino and len(camino) > 0:
+        print("")
         imagen_tu = obtener_imagen_base64(user_me_img, bucket="imagenes_users")
 
         if imagen_tu:
             user_node = Node(
                 id="user_node",
-                label="TU 👤",
+                label="TU",
                 size=50,
                 shape="circularImage",
                 image=imagen_tu,
@@ -201,7 +202,7 @@ def render_digraph_detail(items, height_container, camino):
         else:
             user_node = Node(
                 id="user_node",
-                label="TU 👤",
+                label="TU",
                 size=50,
                 shape="dot",
                 color="#00FF87",
