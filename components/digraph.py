@@ -282,6 +282,6 @@ def render_digraph_detail(items, height_container, camino):
             gap="xxsmall",
             vertical_alignment="center",
         ):
-        return agraph(nodes=agraph_nodes, edges=agraph_arcs, config=config)
+            return agraph(nodes=agraph_nodes, edges=agraph_arcs, config=config)
     else:
         st.info("No hi ha ítems actius per mostrar.")
