@@ -88,6 +88,8 @@ def go_create_callback(registro_have, registro_want):
         st.session_state.show_create = True
     else:
         st.session_state.show_login = True
+        
+    st.rerun(scope="app")
 
 #@st.fragment
 def show_rute(item_dict):
