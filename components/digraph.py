@@ -138,7 +138,9 @@ def render_digraph_detail(items, height_container, camino):
     agraph_nodes = []
     agraph_arcs = []
 
-    camino_set = set(camino) if camino else set()
+    #camino_set = set(camino) if camino else set()
+    # Mapa de posiciones de los nodos en el camino para búsqueda O(1)
+    camino_idx = {node_id: idx for idx, node_id in enumerate(camino)} if camino else {}
 
     # Precalculamos las aristas del camino en O(1) para evitar .index() en bucles
     camino_edges = set()
@@ -152,8 +154,8 @@ def render_digraph_detail(items, height_container, camino):
         node_color = "#34495E"
         node_size = 25
         
-        if camino:
-            if node_id in camino_set:
+        if camino is not None:
+            if node_id in camino_idx:
                 node_color = "#FF4B4B"
                 node_size = 40
             else:
