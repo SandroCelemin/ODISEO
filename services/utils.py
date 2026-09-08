@@ -211,7 +211,7 @@ def renderizar_imagen(
     img_bytes = get_processed_image_bytes(file_name, bucket_name, size, shape, reserved, crop)
     
     if not img_bytes:
-        st.warning("No se pudo cargar la imagen.")
+        st.warning("No s'ha pogut carregar la imatge.")
         return
 
     # Usamos st.image pasándole directamente los bytes
