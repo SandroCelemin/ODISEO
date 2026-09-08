@@ -38,7 +38,7 @@ def init_db():
     c.execute("""
     CREATE TABLE IF NOT EXISTS items (
         item_id VARCHAR PRIMARY KEY,
-        user VARCHAR,
+        "user" VARCHAR,
         have VARCHAR,
         description TEXT,
         image TEXT,
@@ -73,7 +73,7 @@ def init_db():
     c.execute("""
     CREATE TABLE IF NOT EXISTS notifications (
         notification_id SERIAL PRIMARY KEY,
-        user VARCHAR,
+        "user" VARCHAR,
         item_id VARCHAR,
         message TEXT,
         is_read INTEGER DEFAULT 0,  -- 0 = No leída, 1 = Notificada como toast, 2 = Vista
