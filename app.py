@@ -8,10 +8,10 @@
     # ---            / Usuario
     # ---            / Notificaciones
     # ---            / Cadenas
-    # ---            / Crear artículo
-    # ---            / Gestionar artículos
+    # ---            / Crear art铆culo
+    # ---            / Gestionar art铆culos
 
-#cambiar la logica de enseñar las notificaciones
+#cambiar la logica de ense帽ar las notificaciones
 
 #-----------------
 import streamlit as st
@@ -48,7 +48,7 @@ def setup_database():
 setup_database()
 float_init()
 
-# 🚀 3. CACHÉ DE CONSULTAS A BD (Evita leer el disco en cada clic)
+# 馃殌 3. CACH脡 DE CONSULTAS A BD (Evita leer el disco en cada clic)
 @st.cache_data
 def fetch_all_items():
     """
@@ -62,10 +62,10 @@ def fetch_all_items():
     return items, item_dict
 
 
-# 🚀 4. CACHÉ DE PROCESAMIENTO DE IMÁGENES PIL
+# 馃殌 4. CACH脡 DE PROCESAMIENTO DE IM脕GENES PIL
 @st.cache_data(show_spinner=False)
 def get_cropped_image(image_path, width=200, height=130):
-    """Corta y redimensiona la imagen usando PIL guardándola en memoria RAM."""
+    """Corta y redimensiona la imagen usando PIL guard谩ndola en memoria RAM."""
     if not image_path:
         return None
     try:
@@ -75,7 +75,7 @@ def get_cropped_image(image_path, width=200, height=130):
         print(f"Error processant la imatge {image_path}: {e}")
         return None
 
-# ────── 5. INICIALIZACIÓN DE SESSION_STATE (Agrupado y limpio) ──────
+# 鈹€鈹€鈹€鈹€鈹€鈹€ 5. INICIALIZACI脫N DE SESSION_STATE (Agrupado y limpio) 鈹€鈹€鈹€鈹€鈹€鈹€
 def init_session_state():
     defaults = {
         "user": None,
@@ -111,7 +111,7 @@ def init_session_state():
 
 init_session_state()
 
-# Esta función resetea los estados de session_state que enseñan las pestañas para que el cambio entre estas sea instantaneo
+# Esta funci贸n resetea los estados de session_state que ense帽an las pesta帽as para que el cambio entre estas sea instantaneo
 def reset_state_show():    
     st.session_state.show_user_items = False
     st.session_state.detail_item = None
@@ -124,7 +124,7 @@ def reset_state_show():
     st.session_state.route_current_step = 0
     st.session_state.camino_resaltado = []
     
-# Como la logica de enseñar "create_item" esta mas arriba del boton, cuando este se pulsa no se ejecuta esa logica
+# Como la logica de ense帽ar "create_item" esta mas arriba del boton, cuando este se pulsa no se ejecuta esa logica
 def go_to_create():
     reset_state_show()
     st.session_state.show_create = True
@@ -138,6 +138,23 @@ def show_my_user():
     reset_state_show()
     st.session_state.show_user = st.session_state.user
 
+def show_notifications():
+    reset_state_show()
+    st.session_state.show_notifications = True
+
+def show_chains():
+    reset_state_show()
+    st.session_state.show_chains = True
+
+def show_user_items():
+    reset_state_show()
+    st.session_state.show_user_items = True
+
+def show_login():
+    reset_state_show()
+    st.session_state.show_login = True
+
+
 def change_menu_state():
     st.session_state.expand_menu = not st.session_state.expand_menu
 
@@ -147,7 +164,7 @@ def get_menu_config():
         return {
             "width": 3.5,
             "css_width": "150px",
-            "cerrar_sesion": "Tancar sessió",
+            "cerrar_sesion": "Tancar sessi贸",
             "cerrar_sesion_help": "",
             "perfil": st.session_state.get("user"),
             "perfil_help": "",
@@ -159,7 +176,7 @@ def get_menu_config():
             "crear_articulo_help": "",
             "ver_articulo": "Els meus articles",
             "ver_articulo_help": "",
-            "iniciar_sesion": "Iniciar sessió",
+            "iniciar_sesion": "Iniciar sessi贸",
             "iniciar_sesion_help": ""
         }
     else:
@@ -167,7 +184,7 @@ def get_menu_config():
             "width": 1,
             "css_width": "75px",
             "cerrar_sesion": "",
-            "cerrar_sesion_help": "Tancar sessió",
+            "cerrar_sesion_help": "Tancar sessi贸",
             "perfil": "",
             "perfil_help": st.session_state.get("user", "Perfil"),
             "notificaciones": "",
@@ -179,12 +196,12 @@ def get_menu_config():
             "ver_articulo": "",
             "ver_articulo_help": "Els meus articles",
             "iniciar_sesion": "",
-            "iniciar_sesion_help": "Iniciar sessió"
+            "iniciar_sesion_help": "Iniciar sessi贸"
         }
         
     #return menu_width
     
-# ───────── CONEXION CON SUPABASE ─────────
+# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ CONEXION CON SUPABASE 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 # 1. Obtener credenciales desde los secrets de Streamlit
 supabase_url = st.secrets["SUPABASE_URL"]
 supabase_key = st.secrets["SUPABASE_KEY"]
@@ -192,32 +209,32 @@ supabase_key = st.secrets["SUPABASE_KEY"]
 # 2. Crear el cliente (esta es la variable `supabase`)
 supabase = create_client(supabase_url, supabase_key)
     
-# ───────── NOTIFICATION TOAST ─────────
+# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ NOTIFICATION TOAST 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 if st.session_state.user:
     toast_notification()
    
-# ───────── DATA ─────────
+# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ DATA 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 # la funcion row_to_items deja los items igual, pero te permite escoger que filas guardar. En este caso guardamos todas, pero puede tener sentido en un futuro.
 #items = [row_to_item(r) for r in get_items()]
 #item_dict = {x["item_id"]: x for x in items}
 
-# ───────── CARGA DE DATOS OPTIMIZADA (DESDE RAM CACHEADA) ─────────
+# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ CARGA DE DATOS OPTIMIZADA (DESDE RAM CACHEADA) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 items, item_dict = fetch_all_items()
 
-# ───────── Cabecera  ─────────
+# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ Cabecera  鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 render_header()
 
-# ───────── Login de usuario o registro ─────────
+# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ Login de usuario o registro 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 if render_auth(supabase):
     st.stop()
 
-# ───────── CREATE ─────────
+# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ CREATE 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 if st.session_state.user and st.session_state.show_create:
     
     render_create(items, supabase)
     st.stop()
 
-# ───────── Menu lateral ─────────
+# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ Menu lateral 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 menu_cfg = get_menu_config()
 menu_width = menu_cfg["width"]
 
@@ -231,7 +248,7 @@ with col_menu:
         st.markdown(
             """
             <style>
-            /* Estilo general para los botones de navegación (Alineados a la izquierda) */
+            /* Estilo general para los botones de navegaci贸n (Alineados a la izquierda) */
             div[class*="st-key-menu_container"] button {
                 justify-content: flex-start !important;
                 text-align: left !important;
@@ -248,7 +265,7 @@ with col_menu:
                 text-align: left !important;
             }
             
-            /* EXCEPCIÓN: Forzamos al botón "menu" (abrir/cerrar) a ir a la derecha */
+            /* EXCEPCI脫N: Forzamos al bot贸n "menu" (abrir/cerrar) a ir a la derecha */
             div[class*="st-key-menu_container"] div[class*="st-key-menu"] button {
                 justify-content: flex-end !important;
                 padding-right: 10px !important;
@@ -276,7 +293,8 @@ with col_menu:
                     help="Tancar la barra lateral", 
                     type="tertiary", 
                     use_container_width=True, 
-                    on_click=change_menu_state)
+                    on_click=change_menu_state
+                )
         
         else:
             #col_btn_menu, _ = st.columns(2)
@@ -290,11 +308,12 @@ with col_menu:
                 help="Obrir la barra lateral", 
                 type="tertiary", 
                 use_container_width=True, 
-                on_click=change_menu_state)
+                on_click=change_menu_state
+            )
         
         if st.session_state.get("user") is not None: #cuando se ha iniciado sesion
             
-            # Cerrar sesión (Usamos el diccionario)
+            # Cerrar sesi贸n (Usamos el diccionario)
             st.button(
                 menu_cfg["cerrar_sesion"], 
                 icon=":material/logout:", 
@@ -322,7 +341,7 @@ with col_menu:
                 st.markdown(
                     """
                     <style>
-                    /* Filtramos para ocultar este bloque de diseño */
+                    /* Filtramos para ocultar este bloque de diseno */
                     div[data-testid="stVerticalBlock"] > div:nth-child(3):has(style) {
                         display: none !important;
                     }
@@ -335,43 +354,41 @@ with col_menu:
                     unsafe_allow_html=True
                 )
                 
-                # Botón Notificaciones con unread (Usamos el diccionario)
-                if st.button(
+                # Boton Notificaciones con unread (Usamos el diccionario)
+                st.button(
                     menu_cfg["notificaciones"], 
                     icon=":material/notifications_unread:", 
                     key="notificaciones", 
                     help=menu_cfg["notificaciones_help"], 
                     type="tertiary", 
-                    use_container_width=True
-                ):
-                    reset_state_show()
-                    st.session_state.show_notifications = True
+                    use_container_width=True,
+                    on_click=show_notifications
+                )
+
             else:
-                # Botón Notificaciones normal (Usamos el diccionario)
-                if st.button(
+                # Boton Notificaciones normal (Usamos el diccionario)
+                st.button(
                     menu_cfg["notificaciones"], 
                     icon=":material/notifications:", 
                     key="notificaciones", 
                     help=menu_cfg["notificaciones_help"], 
                     type="tertiary", 
-                    use_container_width=True
-                ):
-                    reset_state_show()
-                    st.session_state.show_notifications = True
+                    use_container_width=True,
+                    on_click=show_notifications
+                )
 
             st.divider()
             
             # Ver cadenas (Usamos el diccionario)
-            if st.button(
+            st.button(
                 menu_cfg["ver_cadenas"], 
                 icon=":material/link_2:", 
                 key="ver_cadenas", 
                 help=menu_cfg["ver_cadenas_help"], 
                 type="tertiary", 
-                use_container_width=True
-            ):
-                reset_state_show()
-                st.session_state.show_chains = True
+                use_container_width=True,
+                on_click=show_chains
+            )
                 
             st.divider()
                 
@@ -387,56 +404,53 @@ with col_menu:
             )
                 
             # Editar item (Usamos el diccionario)
-            if st.button(
+            st.button(
                 menu_cfg["ver_articulo"], 
                 icon=":material/box_edit:", 
                 key="ver_articulo", 
                 help=menu_cfg["ver_articulo_help"], 
                 type="tertiary", 
-                use_container_width=True
-            ):
-                reset_state_show()
-                st.session_state.show_user_items = True
-                
+                use_container_width=True,
+                on_click=show_user_items
+            )
+
         else: # cuando no se ha iniciado sesion
                 
-            # Iniciar sesión (Usamos el diccionario)
-            if st.button(
+            # Iniciar sesion (Usamos el diccionario)
+            st.button(
                 menu_cfg["iniciar_sesion"], 
                 icon=":material/login:", 
                 key="iniciar_sesion", 
                 help=menu_cfg["iniciar_sesion_help"], 
                 type="tertiary", 
-                use_container_width=True
-            ):
-                reset_state_show()
-                st.session_state.show_login = True
-                st.rerun()
+                use_container_width=True,
+                on_click=show_login
+            )
 
-        # 3. CONGELAMOS ESTE CONTENEDOR EXACTO (Esto sustituye a todo el CSS problemático)
+        # 3. CONGELAMOS ESTE CONTENEDOR EXACTO (Esto sustituye a todo el CSS problem谩tico)
         float_parent(css=f"position: fixed; top: 140px; left: 0px; height: calc(100vh - 140px); width: {menu_cfg['css_width']}; background-color: #f0f2f6; padding-top: 15px; border-right: 1px solid #e0e2e6; z-index: 999999;")
 
-# ───── AREA CONTENIDO DE LA VENTANA ─────
+# 鈹€鈹€鈹€鈹€鈹€ AREA CONTENIDO DE LA VENTANA 鈹€鈹€鈹€鈹€鈹€
 with col_window:
         
-    # ───────── DETAIL ─────────
+    # 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ DETAIL 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     if st.session_state.detail_item and not st.session_state.show_create:
         #reset_state_show()
         render_detail(items)
         st.stop()
 
-    # ───────── USER PROFILE ─────────
+    # 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ USER PROFILE 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     if st.session_state.show_user:
         render_user(st.session_state.show_user)
         st.stop()
 
-    # ───────── USER ITEMS ─────────
+    # 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ USER ITEMS 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     if st.session_state.show_user_items:
         #reset_state_show()
         render_user_items()
         st.stop()
     
-    # ───────── DETALLE DE CADENA ─────────
+    # 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ DETALLE DE CADENA 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     if st.session_state.detail_chain:
         # Reiniciamos el camino resaltado en el grafo a cero
         st.session_state.camino_resaltado = []
@@ -444,13 +458,13 @@ with col_window:
         chain_detail(*st.session_state.detail_chain)
         st.stop()
     
-    # ───────── CADENAS ─────────
+    # 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ CADENAS 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     if st.session_state.show_chains:
         #reset_state_show()
         render_chains()
         st.stop()
         
-    # ───────── NOTIFICATIONS ─────────
+    # 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ NOTIFICATIONS 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     if st.session_state.show_notifications:
         render_notifications()
         st.stop()
