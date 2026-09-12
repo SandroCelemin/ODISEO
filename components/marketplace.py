@@ -163,7 +163,7 @@ def render_batch(batch_items, num_columnas):
                 st.write(f":grey[{item["user"]}] ★ {user_rating}")
                 
                 # ───── BOTÓ VEURE ─────
-                if st.button("Veure", key=f"detail_{item['item_id']}", use_container_width=True, on_click=show_detail)
+                st.button("Veure", key=f"detail_{item['item_id']}", use_container_width=True, on_click=show_detail)
 
 # 🚀 OPTIMITZACIÓ: Utilitzar un fragment perquè només es torni a renderitzar la quadrícula
 @st.fragment
