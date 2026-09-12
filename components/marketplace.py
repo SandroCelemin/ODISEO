@@ -1,4 +1,5 @@
 import io
+import os
 import requests
 import streamlit as st
 #from engine import find_all_want_chains
@@ -58,6 +59,9 @@ def obtener_imagen_item(path, desaturate=False):
 
 SUPABASE_STORAGE_BASE = "https://udmlukpnhvkedmhuvsec.supabase.co/storage/v1/object/public"
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FONT_PATH = os.path.join(BASE_DIR, "Roboto-Regular.ttf")
+
 @st.cache_data(show_spinner=False)
 def open_image(path):
     if not path:
@@ -115,7 +119,7 @@ def agregar_insignia_reservado(img: Image.Image) -> Image.Image:
     y2 = margen + alto_badge
     
     try:
-        font = ImageFont.truetype("Roboto-Regular.ttf", 40)
+        font = ImageFont.truetype(FONT_PATH, 40)
     except OSError:
         font = ImageFont.load_default()
     
