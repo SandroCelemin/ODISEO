@@ -166,7 +166,7 @@ def render_batch(batch_items, num_columnas):
                 # ───── BOTÓ VEURE ─────
                 if st.button("Veure", key=f"detail_{item['item_id']}", use_container_width=True):
                     st.session_state.detail_item = item["item_id"]
-                    st.rerun()
+                    #st.rerun()
 
 
 # 🚀 OPTIMITZACIÓ: Utilitzar un fragment perquè només es torni a renderitzar la quadrícula
