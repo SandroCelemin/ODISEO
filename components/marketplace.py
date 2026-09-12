@@ -134,7 +134,7 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
                 st.write(f":grey[{user["username"]}] ★ {user["rating"]}")
                 
                 # ───── BOTÓ VEURE ─────
-                st.button("Veure", key=f"detail_{item['item_id']}", use_container_width=True, on_click=show_detail):
+                st.button("Veure", key=f"detail_{item['item_id']}", use_container_width=True, on_click=show_detail)
 
     # ───── BOTÓ DE PAGINACIÓ ─────
     if st.session_state.items_limit < total_items:
