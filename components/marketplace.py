@@ -133,9 +133,6 @@ def agregar_insignia_reservado(img: Image.Image) -> Image.Image:
     imagen_final = Image.alpha_composite(img, overlay)
     return imagen_final.convert("RGB")
 
-def show_detail():
-    st.session_state.detail_item = item["item_id"]
-
 
 # 🚀 Renderiza un único lote de 15 artículos de forma aislada
 def render_batch(batch_items, num_columnas):
@@ -167,7 +164,10 @@ def render_batch(batch_items, num_columnas):
                 st.write(f":grey[{item["user"]}] ★ {user_rating}")
                 
                 # ───── BOTÓ VEURE ─────
-                st.button("Veure", key=f"detail_{item['item_id']}", use_container_width=True, on_click=show_detail)
+                if st.button("Veure", key=f"detail_{item['item_id']}", use_container_width=True):
+                    st.session_state.detail_item = item["item_id"]
+                    st.rerun()
+
 
 # 🚀 OPTIMITZACIÓ: Utilitzar un fragment perquè només es torni a renderitzar la quadrícula
 @st.fragment
