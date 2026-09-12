@@ -1,20 +1,15 @@
-import io
-import requests
 import streamlit as st
 #from engine import find_all_want_chains
 #from engine import find_all_chains
 from engine import get_items_from_have_chains
 from db import delete_item, get_items_from_user, get_reserved_items, get_user_by_username
 from services.search import first_distance_items
-from services.utils import renderizar_imagen #get_pil_image
 
 from PIL import Image, ImageOps, ImageEnhance, ImageDraw, ImageFont
 
 @st.cache_data(show_spinner=False)
 def cargar_imagen(path):
-    img = open_image(path)
-    if img is None:
-        return None
+    img = Image.open(path).convert("RGB")
     return ImageOps.fit(img, (275, 200))
 
 def reducir_opacidad(imagen_pil, opacidad):
@@ -44,9 +39,7 @@ def desvanecer_imagen(imagen_pil, factor):
 @st.cache_data(show_spinner=False)
 def obtener_imagen_item(path, desaturate=False):
 
-    img = open_image(path)
-    if img is None:
-        return None
+    img = Image.open(path).convert("RGB")
     img_recortada = ImageOps.fit(img, (275, 200))
     
     if desaturate:
@@ -56,46 +49,10 @@ def obtener_imagen_item(path, desaturate=False):
 
     return img_recortada
 
-SUPABASE_STORAGE_BASE = "https://udmlukpnhvkedmhuvsec.supabase.co/storage/v1/object/public"
-
 @st.cache_data(show_spinner=False)
 def open_image(path):
-    if not path:
-        return None
-    
-    # 1. Arreglar barras de Windows (\ -> /)
-    path = str(path).replace("\\", "/")
+    return Image.open(path).convert("RGB")
 
-    # 2. Convertir la ruta de la DB en URL pública de Supabase
-    if not path.startswith("http"):
-        path = path.lstrip("/")
-        path = f"{SUPABASE_STORAGE_BASE}/{path}"
-
-    try:
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-        res = requests.get(path, headers=headers, timeout=5)
-        res.raise_for_status()
-        return Image.open(io.BytesIO(res.content)).convert("RGB")
-    except Exception as e:
-        print(f"Error cargando '{path}': {e}")
-        return None
-        
-"""
-@st.cache_data(show_spinner=False)
-def open_image(path):
-    if not path:
-        return None
-    try:
-        # Si es una URL de Supabase u otro servidor HTTP
-        if str(path).startswith("http"):
-            res = requests.get(path, timeout=5)
-            res.raise_for_status()
-            return Image.open(io.BytesIO(res.content)).convert("RGB")
-        # Si es una ruta local del disco
-        return Image.open(path).convert("RGB")
-    except Exception:
-        return None
-"""
 def agregar_insignia_reservado(img: Image.Image) -> Image.Image:
     """Afegeix l'etiqueta 'RESERVAT' a la cantonada superior dreta de la imatge."""
     img = img.convert("RGBA")
@@ -108,16 +65,13 @@ def agregar_insignia_reservado(img: Image.Image) -> Image.Image:
     
     # Coordenades de l'etiqueta (cantonada superior dreta)
     margen = 20
-    ancho_badge, alto_badge = 4000, 60
+    ancho_badge, alto_badge = 280, 60
     x1 = ancho - ancho_badge - margen
     y1 = margen
     x2 = ancho - margen
     y2 = margen + alto_badge
     
-    try:
-        font = ImageFont.truetype("DejaVuSans-Bold.ttf", 40)
-    except OSError:
-        font = ImageFont.load_default()
+    font = ImageFont.truetype("Roboto-Regular.ttf", 40)
     
     # 1. Dibuixar fons taronja amb cantonades arrodonides
     draw.rounded_rectangle([x1, y1, x2, y2], radius=8, fill=(230, 81, 0, 230))
@@ -129,14 +83,21 @@ def agregar_insignia_reservado(img: Image.Image) -> Image.Image:
     imagen_final = Image.alpha_composite(img, overlay)
     return imagen_final.convert("RGB")
 
-# 🚀 Renderiza un único lote de 15 artículos de forma aislada
-def render_batch(batch_items, num_columnas):
-    # Consulta a la base de datos SOLO para los 15 artículos de este lote
-    reserved_ids = get_reserved_items(batch_items)
+def show_detail():
+    st.session_state.detail_item = item["item_id"]
+
+
+# 🚀 OPTIMITZACIÓ: Utilitzar un fragment perquè només es torni a renderitzar la quadrícula
+@st.fragment
+def render_grid_con_paginacion(filtered_items, num_columnas):
+    total_items = len(filtered_items)
+    items_to_show = filtered_items[:st.session_state.items_limit]
+
+    reserved_ids = get_reserved_items(items_to_show)
 
     # ───── GRID ─────
-    for i in range(0, len(batch_items), num_columnas):
-        row = batch_items[i:i + num_columnas]
+    for i in range(0, len(items_to_show), num_columnas):
+        row = items_to_show[i:i + num_columnas]
         cols = st.columns(num_columnas)
 
         for col, item in zip(cols, row):
@@ -147,35 +108,33 @@ def render_batch(batch_items, num_columnas):
                 # ───── IMATGE ─────
                 #st.write(item)
                 #path, optimized = ((item["image_optimized"], True) if item["image_optimized"] else (item["image"], False))
-                #path = item.get("image_optimized") or item.get("image")
+                path = item["image_optimized"]
                 
-                if item.get("image_optimized"):
-                    renderizar_imagen(item.get("image_optimized"), "img_opt", (None, None), "normal", locked_or_reserved, False)
+                if path:
+                    # Obté la imatge directament de la memòria cau RAM
+                    
+                    #if optimized:
+                    img = open_image(path)
+                    
+                    if locked_or_reserved:
+                        enhancer = ImageEnhance.Color(img)
+                        img = enhancer.enhance(0.5)
+                        img = desvanecer_imagen(img, 0.5)
+                        img = agregar_insignia_reservado(img)
+                    """
+                    else:
+                        img = obtener_imagen_item(path, locked_or_reserved)
+                    """
+                    st.image(img, use_container_width=True)
 
-                # ───── TEXT ─────                
-                user_rating = item.get("rating")
+                # ───── TEXT ─────
+                user = get_user_by_username(item["user"])
                 
                 st.subheader(f"**{item['have']}**")
-                st.write(f":grey[{item["user"]}] ★ {user_rating}")
+                st.write(f":grey[{user["username"]}] ★ {user["rating"]}")
                 
                 # ───── BOTÓ VEURE ─────
-                if st.button("Veure", key=f"detail_{item['item_id']}", use_container_width=True):
-                    st.session_state.detail_item = item["item_id"]
-                    st.rerun()
-
-# 🚀 OPTIMITZACIÓ: Utilitzar un fragment perquè només es torni a renderitzar la quadrícula
-@st.fragment
-def render_grid_con_paginacion(filtered_items, num_columnas):
-    total_items = len(filtered_items)
-    batch_size = num_columnas * 3  # Tamaño de cada bloque (ej. 5 cols * 3 filas = 15 ítems)
-    
-    items_to_show = filtered_items[:st.session_state.items_limit]
-
-    # ───── ITERACIÓN POR LOTES (BATCHES) ─────
-    # En lugar de iterar ítem a ítem todo el array, procesamos bloques de 15
-    for batch_start in range(0, len(items_to_show), batch_size):
-        batch_items = items_to_show[batch_start : batch_start + batch_size]
-        render_batch(batch_items, num_columnas)
+                st.button("Veure", key=f"detail_{item['item_id']}", use_container_width=True, on_click=show_detail):
 
     # ───── BOTÓ DE PAGINACIÓ ─────
     if st.session_state.items_limit < total_items:
@@ -183,7 +142,7 @@ def render_grid_con_paginacion(filtered_items, num_columnas):
         st.caption(f"Mostrant **{len(items_to_show)}** de **{total_items}** articles disponibles")
 
         def show_more():
-            st.session_state.items_limit += batch_size
+            st.session_state.items_limit += num_columnas * 3
 
         st.button(
             "Mostrar més articles", 
