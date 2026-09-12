@@ -101,9 +101,9 @@ def agregar_insignia_reservado(img: Image.Image) -> Image.Image:
     y2 = margen + alto_badge
     
     try:
-        font = ImageFont.truetype("Roboto-Regular.ttf", 40)
+        font = ImageFont.truetype("Roboto-Bold.ttf", 40)
     except OSError:
-        font = ImageFont.load_default(size=400)
+        font = ImageFont.load_default(size=40)
     
     draw.rounded_rectangle([x1, y1, x2, y2], radius=8, fill=(230, 81, 0, 230))
     
