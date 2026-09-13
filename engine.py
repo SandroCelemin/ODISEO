@@ -114,18 +114,20 @@ def find_all_chains(algoritmo, intent, items, start_item_id):
             if item_index[item_id]["user"] != st.session_state.user
         ]
     """
-    def bfs_modified(items_subset, intent, start_item):
+    def bfs_modified(items_subset_ids, intent, start_item):
         nonlocal results
         
-        queue = deque([[start_item["item_id"]]])
+        start_item_id = start_item["item_id"]
+        
+        queue = deque([([start_item_id], {start_item_id})])
         visited = [start_item["item_id"]]
         
-        results.append([start_item["item_id"]])
+        results.append([start_item_id])
         
         while queue:
-            path = queue.popleft() # path és una llista on es guarda el camí de nodes que s'analitzarà a continuació al codi
+            path, visited_ids = queue.popleft() # path és una llista on es guarda el camí de nodes que s'analitzarà a continuació al codi i visited set es el mateix pero en forma de set per a que la comprovacio sigui O(1)
             current_item_id = path[-1] # current_item_id és l'últim id de cada camí. Servirà per analitzar si s'ha arribat al node inicial
-            visited = path # es posen com a visitats tots els ids NOMÉS del camí que s'està analitzant
+            #visited = path # es posen com a visitats tots els ids NOMÉS del camí que s'està analitzant
             
             if len(path) > max_depth: # atura el BFS quan s'arriba al max_depth dels camins que està seguint
                 print("ATURADA: profunditat màxima assolida")
@@ -134,13 +136,13 @@ def find_all_chains(algoritmo, intent, items, start_item_id):
             neighbours = current_graph.get(current_item_id, [])
             
             for neighbour in neighbours:
-                # No es fa la comprovació "if neighbour in items_subset" perquè no es busquen cadenes reals sinó hipotètiques
+                # No es fa la comprovació "if neighbour in items_subset_ids" perquè no es busquen cadenes reals sinó hipotètiques
                 if neighbour["user"] != item_index[current_item_id]["user"]:
-                    if neighbour["item_id"] not in visited:
+                    if neighbour["item_id"] not in visited_ids:
                         
                         new_path = path + [neighbour["item_id"]]
                             
-                        queue.append(new_path)
+                        queue.append(new_path, visited | {neighbour["item_id"]})
                         results.append(new_path)
         
         # Ens quedem a results amb els camins [Primer-->Segon-->Tercer...] el primer i l'últim ítem
@@ -151,7 +153,7 @@ def find_all_chains(algoritmo, intent, items, start_item_id):
             if item_index[path[-1]]["user"] != st.session_state.user and item_index[path[0]]["user"] != st.session_state.user
         ]
 
-    def dfs_modified(items_subset, intent, current_item, path, visited_ids):
+    def dfs_modified(items_subset_ids, intent, current_item, path, visited_ids):
         nonlocal cycles
 
         if len(path) > max_depth: # atura el DFS quan s'arriba al max_depth de la cadena
@@ -171,14 +173,14 @@ def find_all_chains(algoritmo, intent, items, start_item_id):
         neighbours = current_graph.get(item_id, [])
         
         for neighbour in neighbours:
-            if neighbour in items_subset:
+            if neighbour["item_id"] in items_subset_ids:
                 if neighbour["user"] != current_item["user"]:
                     if neighbour["item_id"] == start_item_id and len(new_path) > 1:
                         cycles.append(new_path)
                         continue
                         
                     if neighbour["item_id"] not in visited_ids:
-                        dfs_modified(items_subset, intent, neighbour, new_path, visited_ids | {neighbour["item_id"]})
+                        dfs_modified(items_subset_ids, intent, neighbour, new_path, visited_ids | {neighbour["item_id"]})
 
     def johnson(find_all):
         nonlocal cycles
@@ -348,10 +350,12 @@ def find_all_chains(algoritmo, intent, items, start_item_id):
     # Busquem la SCC a la qual pertany 'start_item'
     sccs = kosaraju(items, current_graph)
     items_subset = None
+    items_subset_ids = set()
     
     for scc in sccs:
         if start_item in scc:
-            items_subset = set(scc)
+            items_subset = scc
+            items_subset_ids = {item["item_id"] for item in scc}
             break
     
     # items_subset és el conjunt d'ítems que forma la scc a la qual pertany el start item
@@ -362,16 +366,17 @@ def find_all_chains(algoritmo, intent, items, start_item_id):
     # =====================================
     # EXECUCIÓ DE L'ALGORISME SELECCIONAT
     # =====================================
+    """
     if algoritmo == "bfs":
-        bfs(items_subset, intent, start_item)
+        bfs(items_subset_ids, intent, start_item)
         return results
-        
-    elif algoritmo == "bfs_modified":
-        bfs_modified(items_subset, intent, start_item)
+    """
+    if algoritmo == "bfs_modified":
+        bfs_modified(items_subset_ids, intent, start_item)
         return results
         
     elif algoritmo == "dfs_modified":
-        dfs_modified(items_subset, intent, start_item, [], {start_item_id})
+        dfs_modified(items_subset_ids, intent, start_item, [], {start_item_id})
         return cycles        
         
     elif algoritmo == "kosaraju":
@@ -443,7 +448,7 @@ def get_items_from_have_chains(items, have_text, intent): # S'executa quan inten
     #=================
     # ALGORISME BFS
     #=================
-    
+
     # Cerca els ÍTEMS ASSOLIBLES (no els camins per assolir-los) -> càrrega de marketplace
     def bfs(intent, start_seeds):
         
@@ -480,15 +485,12 @@ def get_items_from_have_chains(items, have_text, intent): # S'executa quan inten
     # ESTRUCTURA PRINCIPAL
     #======================
     seeds = first_distance_items(items, have_text, intent)
-    reachable_items = []
-    visited_ids = set()
-    
     seeds_ids = deque([seed["item_id"] for seed in seeds])
+    
     reachable_items = bfs(intent, seeds_ids)
     
-    #return reachable_items # És una llista d'ítems
+    #return reachable_items És una llista d'ítems
     return reachable_items
-    #"""
 """
 ------ BFS ABANS DE LA LLISTA D'ADJACÈNCIA ------
    
