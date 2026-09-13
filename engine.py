@@ -351,7 +351,7 @@ def find_all_chains(algoritmo, intent, items, start_item_id):
     
     for scc in sccs:
         if start_item in scc:
-            items_subset = scc
+            items_subset = set(scc)
             break
     
     # items_subset és el conjunt d'ítems que forma la scc a la qual pertany el start item
