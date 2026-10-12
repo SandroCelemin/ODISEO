@@ -125,9 +125,8 @@ def find_all_chains(algoritmo, intent, items, start_item_id):
         results.append([start_item_id])
         
         while queue:
-            path, visited_ids = queue.popleft() # path és una llista on es guarda el camí de nodes que s'analitzarà a continuació al codi i visited set es el mateix pero en forma de set per a que la comprovacio sigui O(1)
+            path, visited_ids = queue.popleft() # path és una llista on es guarda el camí de nodes que s'analitzarà a continuació al codi i visited_ids es el mateix pero en forma de set per a que la comprovacio sigui O(1)
             current_item_id = path[-1] # current_item_id és l'últim id de cada camí. Servirà per analitzar si s'ha arribat al node inicial
-            #visited = path # es posen com a visitats tots els ids NOMÉS del camí que s'està analitzant
             
             if len(path) > max_depth: # atura el BFS quan s'arriba al max_depth dels camins que està seguint
                 print("ATURADA: profunditat màxima assolida")
@@ -142,7 +141,7 @@ def find_all_chains(algoritmo, intent, items, start_item_id):
                         
                         new_path = path + [neighbour["item_id"]]
                             
-                        queue.append(new_path, visited | {neighbour["item_id"]})
+                        queue.append((new_path, visited_ids | {neighbour["item_id"]}))
                         results.append(new_path)
         
         # Ens quedem a results amb els camins [Primer-->Segon-->Tercer...] el primer i l'últim ítem
