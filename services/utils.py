@@ -34,8 +34,6 @@ def fetch_bytes(url: str) -> bytes | None:
     if not url:
         return None
     try:
-        # Aumentamos ligeramente el timeout y usamos sesión si se llamara en bucle, 
-        # pero para caché simple requests.get está bien.
         headers = {"User-Agent": "Mozilla/5.0"}
         res = requests.get(url, headers=headers, timeout=8)
         res.raise_for_status()
@@ -44,7 +42,7 @@ def fetch_bytes(url: str) -> bytes | None:
         print(f"Error descargando bytes de '{url}': {e}")
         return None
 
-# Mantenida por compatibilidad (aunque ya no se usa en el renderizado rápido)
+
 def get_pil_image(path_or_url: str, bucket_name: str = None) -> Image.Image | None:
     if not path_or_url:
         return None
@@ -114,7 +112,7 @@ def agregar_insignia_reservado(img: Image.Image) -> Image.Image:
     return Image.alpha_composite(img, overlay)
 
 
-# ───────── NUEVO: CACHÉ DE BYTES FINALES ─────────
+# ───────── CACHÉ DE BYTES FINALES ─────────
 @st.cache_data(show_spinner=False, max_entries=200, ttl=3600)
 def get_processed_image_bytes(
     file_name: str, 
@@ -125,8 +123,8 @@ def get_processed_image_bytes(
     crop: bool = True
 ) -> bytes | None:
     """
-    Descarga, procesa y CODIFICA la imagen final a bytes.
-    Al devolver bytes, st.image no tiene que hacer ningún trabajo extra.
+    Descarga, procesa y codifica la imagen final a bytes
+    Al devolver bytes, st.image no tiene que hacer ningún trabajo extra
     """
     if not file_name:
         return None
@@ -205,8 +203,7 @@ def renderizar_imagen(
     crop: bool = True
 ):
     """
-    Pinta directamente en Streamlit los bytes procesados. 
-    Esto es entre 3x y 10x más rápido porque Streamlit solo inyecta el HTML de la imagen.
+    Pinta directamente en Streamlit los bytes procesados 
     """
     img_bytes = get_processed_image_bytes(file_name, bucket_name, size, shape, reserved, crop)
     
